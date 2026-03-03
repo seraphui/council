@@ -55,14 +55,14 @@ export default function DirectChatTab() {
         content: m.content
       }));
 
-      console.log('Sending request to:', '/api/chat/direct');
-      const response = await fetch('/api/chat/direct', {
+      console.log('Sending request to:', '/api/chat');
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          entity_id: selectedEntity.id,
+          entityId: selectedEntity.fullName,
           message: userMessage.content,
-          history: history,
+          conversationHistory: history,
         }),
       });
 

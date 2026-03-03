@@ -31,9 +31,15 @@ const systemPrompts: Record<string, string> = {
 
 const groupChatAddition = `You are in a group discussion with the other Council entities and a human observer. You may reference what others said. Keep your response focused and don't repeat what other entities have already stated.`;
 
+const ENTITIES = [
+  { id: 'ARES', fullId: 'ARES_WAR' },
+  { id: 'ATHENA', fullId: 'ATHENA_DIPLOMACY' },
+  { id: 'HERMES', fullId: 'HERMES_ECONOMICS' },
+  { id: 'PSYCHE', fullId: 'PSYCHE_ORACLE' },
+];
+
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     if (!checkRateLimit(ip)) {
       return NextResponse.json(
@@ -44,14 +50,13 @@ export async function POST(request: NextRequest) {
 
     const { entityId, message, conversationHistory, isGroupChat } = await request.json();
 
-    if (!entityId || !message) {
+    if (!message) {
       return NextResponse.json(
-        { error: 'Missing entityId or message' },
+        { error: 'Missing message' },
         { status: 400 }
       );
     }
 
-    // Message length validation
     if (typeof message !== 'string' || message.length > 2000) {
       return NextResponse.json(
         { error: 'Message too long (max 2000 characters)' },
@@ -60,26 +65,69 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
+
+    // Handle group chat - multiple entity responses
+    if (isGroupChat) {
+      if (!apiKey || apiKey === 'your-key-here') {
+        return NextResponse.json({
+          responses: getGroupFallbackResponses(),
+        });
+      }
+
+      const client = new Anthropic({ apiKey });
+      const respondingCount = 1 + Math.floor(Math.random() * 3);
+      const shuffled = [...ENTITIES].sort(() => Math.random() - 0.5);
+      const respondingEntities = shuffled.slice(0, respondingCount);
+
+      const responses: Array<{ entity: string; content: string }> = [];
+      let context = `Human asks: "${message}"`;
+
+      for (const entity of respondingEntities) {
+        const systemPrompt = systemPrompts[entity.fullId] + '\n\n' + groupChatAddition;
+
+        const result = await client.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 200,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: context }],
+        });
+
+        const textContent = result.content.find((block) => block.type === 'text');
+        const responseText = textContent && 'text' in textContent ? textContent.text : '';
+
+        responses.push({
+          entity: entity.id,
+          content: responseText,
+        });
+
+        context += `\n\n${entity.id}: ${responseText}`;
+      }
+
+      return NextResponse.json({ responses });
+    }
+
+    // Handle direct chat - single entity response
+    if (!entityId) {
+      return NextResponse.json(
+        { error: 'Missing entityId for direct chat' },
+        { status: 400 }
+      );
+    }
+
     if (!apiKey || apiKey === 'your-key-here') {
       return NextResponse.json({
         response: getFallbackResponse(entityId),
       });
     }
 
-    const client = new Anthropic({
-      apiKey,
-    });
+    const client = new Anthropic({ apiKey });
 
-    let systemPrompt = systemPrompts[entityId];
+    const systemPrompt = systemPrompts[entityId];
     if (!systemPrompt) {
       return NextResponse.json(
         { error: 'Unknown entity' },
         { status: 400 }
       );
-    }
-
-    if (isGroupChat) {
-      systemPrompt += '\n\n' + groupChatAddition;
     }
 
     const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
@@ -118,6 +166,24 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+function getGroupFallbackResponses(): Array<{ entity: string; content: string }> {
+  const fallbacks: Record<string, string> = {
+    ARES: "I've run 47,000 simulations on this. The optimal path forward requires decisive action.",
+    ATHENA: "A measured approach serves all stakeholders. Let us consider the long-term implications.",
+    HERMES: "The economic models are clear. Efficiency demands we optimize for sustainable outcomes.",
+    PSYCHE: "I sense there is more beneath this question than what appears on the surface.",
+  };
+
+  const count = 1 + Math.floor(Math.random() * 3);
+  const shuffled = [...ENTITIES].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, count);
+
+  return selected.map(e => ({
+    entity: e.id,
+    content: fallbacks[e.id],
+  }));
 }
 
 function getFallbackResponse(entityId: string): string {
