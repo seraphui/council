@@ -2,10 +2,12 @@ import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
 const ADMIN_SECRET = process.env.COUNCIL_ADMIN_SECRET || '';
 
@@ -36,6 +38,7 @@ const ROUND_CONTEXT = {
 // GET: Fetch the latest session for viewers
 // ════════════════════════════════════
 export async function GET() {
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('council_sessions')
     .select('*')
@@ -63,6 +66,7 @@ export async function GET() {
 // POST: Admin triggers a new debate
 // ════════════════════════════════════
 export async function POST(request: NextRequest) {
+  const supabase = getSupabase();
   try {
     const body = await request.json();
     const { topic, adminSecret, generateTopic } = body;
