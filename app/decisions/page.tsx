@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { castVote, getAllVotes, getUserVotes } from '@/lib/votes';
 import { useRealtimeVotes } from '@/hooks/useRealtimeVotes';
 
+export const dynamic = 'force-dynamic';
+
 // ============================================================================
 // CONFIGURATION
 // ============================================================================

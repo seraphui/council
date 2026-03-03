@@ -5,7 +5,7 @@ import { entities, sampleMessages } from '@/lib/entities';
 import { EntityIcon, HumanSilhouette } from '../Icons';
 import { MagicCard } from '../MagicCard';
 import { AnimatedBeam } from '../AnimatedBeam';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 interface SessionMessage {
   entity: string;
@@ -233,6 +233,7 @@ function DiscussionPanel() {
   useEffect(() => {
     fetchSession(true);
 
+    const supabase = getSupabase();
     const channel = supabase
       .channel('council-session')
       .on(

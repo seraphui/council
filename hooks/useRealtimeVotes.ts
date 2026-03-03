@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 export function useRealtimeVotes(onUpdate: () => void) {
   useEffect(() => {
+    const supabase = getSupabase();
     const channel = supabase
       .channel('votes-realtime')
       .on(
@@ -31,6 +32,7 @@ export function useRealtimeVotesForProposal(
   onUpdate: () => void
 ) {
   useEffect(() => {
+    const supabase = getSupabase();
     const channel = supabase
       .channel(`votes:${proposalId}`)
       .on(

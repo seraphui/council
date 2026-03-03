@@ -2,6 +2,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -43,10 +45,9 @@ export async function GET() {
     .from('council_sessions')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
+    .limit(1);
 
-  if (error || !data) {
+  if (error || !data || data.length === 0) {
     return NextResponse.json({
       status: 'idle',
       topic: null,
@@ -54,11 +55,12 @@ export async function GET() {
     });
   }
 
+  const session = data[0];
   return NextResponse.json({
-    status: data.status,
-    topic: data.topic,
-    messages: data.messages,
-    created_at: data.created_at,
+    status: session.status,
+    topic: session.topic,
+    messages: session.messages,
+    created_at: session.created_at,
   });
 }
 

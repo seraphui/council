@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getSupabase } from './supabase';
 
 export async function castVote(
   proposalId: string,
@@ -6,6 +6,7 @@ export async function castVote(
   walletAddress: string,
   votingPower: number
 ) {
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('votes')
     .upsert(
@@ -30,6 +31,7 @@ export async function castVote(
 export async function getVoteCounts(
   proposalId: string
 ): Promise<{ [optionIndex: number]: { count: number; power: number } }> {
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('votes')
     .select('option_index, voting_power')
@@ -56,15 +58,16 @@ export async function getUserVote(
   proposalId: string,
   walletAddress: string
 ): Promise<number | null> {
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('votes')
     .select('option_index')
     .eq('proposal_id', proposalId)
     .eq('wallet_address', walletAddress)
-    .single();
+    .limit(1);
 
-  if (error || !data) return null;
-  return data.option_index;
+  if (error || !data || data.length === 0) return null;
+  return data[0].option_index;
 }
 
 export async function getAllVotes(): Promise<{
@@ -73,6 +76,7 @@ export async function getAllVotes(): Promise<{
     totalVoters: number;
   };
 }> {
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('votes')
     .select('proposal_id, option_index, voting_power');
@@ -110,6 +114,7 @@ export async function getAllVotes(): Promise<{
 export async function getUserVotes(
   walletAddress: string
 ): Promise<{ [proposalId: string]: number }> {
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('votes')
     .select('proposal_id, option_index')
