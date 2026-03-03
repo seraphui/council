@@ -1,0 +1,343 @@
+'use client';
+
+import { useRef, useEffect, useState, useCallback } from 'react';
+import { entities, sampleMessages } from '@/lib/entities';
+import { EntityIcon, HumanSilhouette } from '../Icons';
+import { MagicCard } from '../MagicCard';
+import { AnimatedBeam } from '../AnimatedBeam';
+import { supabase } from '@/lib/supabase';
+
+interface SessionMessage {
+  entity: string;
+  entityId?: string;
+  content: string;
+  round?: number;
+  is_final?: boolean;
+}
+
+interface Session {
+  topic: string;
+  messages: SessionMessage[];
+  status?: string;
+}
+
+function CouncilFormation() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const aresRef = useRef<HTMLDivElement>(null);
+  const athenaRef = useRef<HTMLDivElement>(null);
+  const hermesRef = useRef<HTMLDivElement>(null);
+  const psycheRef = useRef<HTMLDivElement>(null);
+  const centerRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative flex h-[400px] w-full items-center justify-center overflow-hidden pb-4"
+    >
+      <div className="flex size-full max-h-[300px] max-w-lg flex-col items-stretch justify-between gap-10">
+        <div className="flex flex-row items-center justify-between">
+          <div className="flex flex-col items-center">
+            <div 
+              ref={aresRef}
+              className="w-12 h-12 rounded-full bg-white/70 border border-[rgba(0,0,0,0.1)] flex items-center justify-center"
+            >
+              <EntityIcon icon="swords" className="w-5 h-5" />
+            </div>
+            <span className="font-mono text-[9px] tracking-[1px] text-[#444] mt-2">ARES</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <div 
+              ref={hermesRef}
+              className="w-12 h-12 rounded-full bg-white/70 border border-[rgba(0,0,0,0.1)] flex items-center justify-center"
+            >
+              <EntityIcon icon="arrow" className="w-5 h-5" />
+            </div>
+            <span className="font-mono text-[9px] tracking-[1px] text-[#444] mt-2">HERMES</span>
+          </div>
+        </div>
+
+        <div className="flex flex-row items-center justify-center">
+          <div className="flex flex-col items-center">
+            <div 
+              ref={centerRef}
+              className="w-16 h-16 rounded-full bg-white/80 border border-[rgba(0,0,0,0.15)] flex items-center justify-center"
+            >
+              <HumanSilhouette className="w-8 h-8 text-[#444]" />
+            </div>
+            <span className="font-mono text-[9px] tracking-[1px] text-[#444] mt-2">HUMANITY</span>
+          </div>
+        </div>
+
+        <div className="flex flex-row items-center justify-between">
+          <div className="flex flex-col items-center">
+            <div 
+              ref={athenaRef}
+              className="w-12 h-12 rounded-full bg-white/70 border border-[rgba(0,0,0,0.1)] flex items-center justify-center"
+            >
+              <EntityIcon icon="scales" className="w-5 h-5" />
+            </div>
+            <span className="font-mono text-[9px] tracking-[1px] text-[#444] mt-2">ATHENA</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <div 
+              ref={psycheRef}
+              className="w-12 h-12 rounded-full bg-white/70 border border-[rgba(0,0,0,0.1)] flex items-center justify-center"
+            >
+              <EntityIcon icon="brain" className="w-5 h-5" />
+            </div>
+            <span className="font-mono text-[9px] tracking-[1px] text-[#444] mt-2">PSYCHE</span>
+          </div>
+        </div>
+      </div>
+
+      <AnimatedBeam 
+        containerRef={containerRef} 
+        fromRef={aresRef} 
+        toRef={centerRef} 
+        curvature={-75}
+        startXOffset={17}
+        startYOffset={17}
+        endXOffset={-23}
+        endYOffset={-23}
+        pathColor="rgba(0,0,0,0.2)" 
+        pathOpacity={0.4} 
+        gradientStartColor="#1a1a1a" 
+        gradientStopColor="#1a1a1a"
+      />
+      <AnimatedBeam 
+        containerRef={containerRef} 
+        fromRef={hermesRef} 
+        toRef={centerRef} 
+        curvature={-75}
+        startXOffset={-17}
+        startYOffset={17}
+        endXOffset={23}
+        endYOffset={-23}
+        reverse
+        pathColor="rgba(0,0,0,0.2)" 
+        pathOpacity={0.4} 
+        gradientStartColor="#1a1a1a" 
+        gradientStopColor="#1a1a1a"
+      />
+      <AnimatedBeam 
+        containerRef={containerRef} 
+        fromRef={athenaRef} 
+        toRef={centerRef} 
+        curvature={75}
+        startXOffset={17}
+        startYOffset={-17}
+        endXOffset={-23}
+        endYOffset={23}
+        pathColor="rgba(0,0,0,0.2)" 
+        pathOpacity={0.4} 
+        gradientStartColor="#1a1a1a" 
+        gradientStopColor="#1a1a1a"
+      />
+      <AnimatedBeam 
+        containerRef={containerRef} 
+        fromRef={psycheRef} 
+        toRef={centerRef} 
+        curvature={75}
+        startXOffset={-17}
+        startYOffset={-17}
+        endXOffset={23}
+        endYOffset={23}
+        reverse
+        pathColor="rgba(0,0,0,0.2)" 
+        pathOpacity={0.4} 
+        gradientStartColor="#1a1a1a" 
+        gradientStopColor="#1a1a1a"
+      />
+    </div>
+  );
+}
+
+function EntityGrid() {
+  return (
+    <div className="grid grid-cols-2 gap-4 my-8">
+      {entities.map((entity) => (
+        <MagicCard key={entity.id} className="p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <EntityIcon icon={entity.icon} className="w-5 h-5" />
+            <span className="font-mono text-[11px] tracking-[1px]">{entity.id}</span>
+          </div>
+          <p className="font-roos text-[13px] text-[#333]">{entity.title}</p>
+        </MagicCard>
+      ))}
+    </div>
+  );
+}
+
+function DiscussionPanel() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [visibleMessages, setVisibleMessages] = useState<number>(0);
+  const [thinkingEntity, setThinkingEntity] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [useFallback, setUseFallback] = useState(true);
+  const [totalMessages, setTotalMessages] = useState<number>(0);
+
+  const currentMessages = session?.messages || (useFallback ? sampleMessages.map(m => ({ entity: m.entity, content: m.message })) : []);
+
+  const fetchSession = useCallback(async (isInitialLoad = false) => {
+    if (isInitialLoad) {
+      setIsLoading(true);
+      setVisibleMessages(0);
+      setThinkingEntity(null);
+      setSession(null);
+      setUseFallback(false);
+    }
+
+    try {
+      const response = await fetch('/api/council/session');
+      if (!response.ok) throw new Error('Failed to fetch session');
+      const data = await response.json();
+      
+      if (data.status === 'COMPLETE' || data.status === 'GENERATING') {
+        const newMessageCount = data.messages?.length || 0;
+        const prevMessageCount = totalMessages;
+        
+        setSession({ topic: data.topic, messages: data.messages, status: data.status });
+        setTotalMessages(newMessageCount);
+        setIsOffline(false);
+        setUseFallback(false);
+        
+        // If new messages arrived via realtime, the typing animation will pick them up
+        // Don't reset visibleMessages - let the animation continue from where it was
+        if (isInitialLoad) {
+          setVisibleMessages(0);
+        } else if (newMessageCount > prevMessageCount && visibleMessages >= prevMessageCount) {
+          // New messages arrived and we've shown all previous ones
+          // The useEffect below will handle showing the new ones with animation
+        }
+      } else {
+        // No active session - use fallback sample messages
+        setSession(null);
+        setUseFallback(true);
+        setIsOffline(false);
+        if (isInitialLoad) {
+          setVisibleMessages(0);
+        }
+      }
+    } catch (error) {
+      console.error('Council offline:', error);
+      setIsOffline(true);
+      setUseFallback(true);
+    } finally {
+      if (isInitialLoad) {
+        setIsLoading(false);
+      }
+    }
+  }, [totalMessages, visibleMessages]);
+
+  useEffect(() => {
+    fetchSession(true);
+
+    const channel = supabase
+      .channel('council-session')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'council_sessions' },
+        () => {
+          fetchSession(false);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchSession]);
+
+  // Typing animation - reveals messages one by one
+  useEffect(() => {
+    if (isLoading || visibleMessages >= currentMessages.length) return;
+
+    const nextEntity = currentMessages[visibleMessages]?.entity;
+    setThinkingEntity(nextEntity || null);
+    
+    const delay = 2000 + Math.random() * 1000;
+    const timer = setTimeout(() => {
+      setThinkingEntity(null);
+      setVisibleMessages((prev) => prev + 1);
+    }, delay);
+    
+    return () => clearTimeout(timer);
+  }, [visibleMessages, currentMessages.length, isLoading]);
+
+  const getEntity = (id: string) => entities.find((e) => e.id === id);
+
+  const formatTime = (index: number) => {
+    const base = new Date();
+    base.setMinutes(base.getMinutes() - (currentMessages.length - index) * 2);
+    return base.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  return (
+    <div className="border border-[rgba(0,0,0,0.1)]">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(0,0,0,0.1)]">
+        <div className="flex items-center gap-4">
+          <span className="font-ui text-[11px] uppercase tracking-[1px]">
+            {session?.topic ? `Topic: ${session.topic.slice(0, 50)}...` : 'Council Session — Active'}
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          {isOffline && (
+            <span className="font-mono text-[10px] text-red-600">Council Offline</span>
+          )}
+          <span className="font-mono text-[10px] text-[#444] flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500'} animate-pulse`} />
+            {isLoading ? 'Connecting...' : 'Monitoring'}
+          </span>
+        </div>
+      </div>
+      
+      <div className="max-h-[400px] overflow-y-auto">
+        {currentMessages.slice(0, visibleMessages).map((msg, index) => {
+          const entity = getEntity(msg.entity);
+          return (
+            <div 
+              key={index} 
+              className="flex gap-4 px-5 py-4 border-b border-[rgba(0,0,0,0.05)] animate-fade-up"
+            >
+              <div className="w-8 h-8 rounded-full bg-white/70 backdrop-blur border border-[rgba(0,0,0,0.1)] flex items-center justify-center flex-shrink-0">
+                <EntityIcon icon={entity?.icon || 'brain'} className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="font-ui text-[11px] uppercase tracking-[0.5px]">{msg.entity}</span>
+                  <span className="font-mono text-[10px] text-[#444]">{formatTime(index)}</span>
+                </div>
+                <p className="font-roos text-[14px] text-[#333] leading-relaxed">{msg.content}</p>
+              </div>
+            </div>
+          );
+        })}
+        
+        {thinkingEntity && (
+          <div className="px-5 py-3 text-center">
+            <span className="font-mono text-[10px] text-[#444] italic">
+              {thinkingEntity} is deliberating...
+            </span>
+          </div>
+        )}
+      </div>
+      
+      <div className="px-5 py-3 bg-[rgba(0,0,0,0.02)] border-t border-[rgba(0,0,0,0.1)]">
+        <p className="font-mono text-[10px] text-[#444] text-center">
+          {isOffline ? 'Showing archived session. Council is currently offline.' : 'Live council discussions are classified. Observer access only.'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function LiveCouncilTab() {
+  return (
+    <div className="space-y-8">
+      <CouncilFormation />
+      <EntityGrid />
+      <DiscussionPanel />
+    </div>
+  );
+}

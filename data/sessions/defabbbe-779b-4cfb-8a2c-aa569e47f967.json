@@ -1,0 +1,48 @@
+{
+  "id": "defabbbe-779b-4cfb-8a2c-aa569e47f967",
+  "type": "council",
+  "created_at": "2026-02-27T17:43:53.839904",
+  "messages": [
+    {
+      "entity": "PSYCHE",
+      "content": "You're asking the wrong question. UBI won't fix technological unemployment because humans derive identity and status from work, not just survival money. The real psychological crisis isn't poverty \u2014 it's purposelessness, and throwing cash at that creates dependency, not dignity.",
+      "is_final": false
+    },
+    {
+      "entity": "ARES",
+      "content": "PSYCHE misses the strategic imperative. UBI is force multiplication \u2014 it eliminates the friction of basic survival so displaced workers can retrain without economic collapse. The real question isn't psychological comfort but operational tempo: do we want mass unemployment to destabilize society while we debate purpose, or do we maintain stability and buy time to restructure the economy?",
+      "is_final": false
+    },
+    {
+      "entity": "ATHENA",
+      "content": "UBI creates the wrong negotiation framework entirely. It positions displaced workers as supplicants rather than stakeholders with leverage \u2014 when what we need is a transition that maintains their bargaining power while industries restructure. The diplomatic solution is portable benefits tied to contribution metrics, not unconditional payments that dissolve worker influence in the very economic transformation displacing them.",
+      "is_final": false
+    },
+    {
+      "entity": "HERMES",
+      "content": "**Flat wrong on the fundamentals.** UBI costs $3-4 trillion annually in the US alone while creating massive labor supply distortions \u2014 basic economics shows unconditional transfers reduce work incentives by 13-20% based on existing pilots. The efficient solution is targeted retraining subsidies at $200B annually with measurable ROI, not helicopter money that breaks price discovery mechanisms and creates permanent fiscal drag.",
+      "is_final": false
+    },
+    {
+      "entity": "HERMES",
+      "content": "**ARES** \u2014 your \"buying time\" ignores the opportunity cost. Every year of UBI delays means $4T in deadweight loss while skills decay and labor markets ossify. The tactical move is immediate wage subsidies for displaced workers in growth sectors \u2014 maintains work incentives, costs 80% less, and builds productive capacity instead of consumption dependency.",
+      "is_final": false
+    },
+    {
+      "entity": "ATHENA",
+      "content": "**HERMES** \u2014 your efficiency calculus ignores political sustainability. Targeted retraining requires bureaucratic machinery that displaced workers don't trust and politicians can't resist gaming, while UBI's simplicity makes it harder to corrupt or capture.\n\nThe viable framework is hybrid: universal basic assets (education accounts, health savings) that maintain stakeholder dignity while targeting growth sectors through portable wage insurance that follows workers between jobs, not bureaucrats between programs.",
+      "is_final": false
+    },
+    {
+      "entity": "PSYCHE",
+      "content": "**Final verdict:** UBI fails because you can't purchase meaning \u2014 displaced workers need ownership stakes in the new economy, not welfare checks that confirm their obsolescence. The solution is equity-based retraining where workers become investors in the technologies replacing them.",
+      "is_final": false
+    },
+    {
+      "entity": "ARES",
+      "content": "**Reject UBI.** Implement targeted wage subsidies for displaced workers transitioning to growth sectors \u2014 maintains work incentives, costs 80% less than UBI, and builds productive capacity while the economy restructures under controlled conditions.",
+      "is_final": true
+    }
+  ],
+  "topic": "Is universal basic income the answer to technological unemployment?"
+}

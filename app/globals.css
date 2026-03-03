@@ -1,0 +1,180 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'WT Solaire Display Light';
+  src: url('/fonts/WTSolaireDisplay-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roos Display';
+  src: url('/fonts/RoosDisplay-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --text: #1a1a1a;
+  --text-mid: #333333;
+  --text-dim: #444444;
+  --border: rgba(0,0,0,0.1);
+  --border-s: rgba(0,0,0,0.15);
+  --bg-cream: #f5f2ed;
+  --bg-panel: rgba(255, 255, 255, 0.6);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Roos Display', Georgia, serif;
+  color: var(--text);
+  line-height: 1.6;
+  background-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.25);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.15) transparent;
+}
+
+/* Typography Classes */
+.font-solaire {
+  font-family: 'WT Solaire Display Light', 'Playfair Display', Georgia, serif;
+  font-weight: 300;
+}
+
+.font-roos {
+  font-family: 'Roos Display', Georgia, serif;
+}
+
+.font-ui {
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Content Panel */
+.content-panel {
+  background: var(--bg-panel);
+}
+
+/* Entity Glow Animation */
+@keyframes entity-glow {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(0,0,0,0.1); 
+  }
+  50% { 
+    box-shadow: 0 0 20px 8px rgba(0,0,0,0.15); 
+  }
+}
+
+.entity-thinking {
+  animation: entity-glow 2s ease-in-out infinite;
+}
+
+/* Fade In Animation */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.4s ease-out forwards;
+}
+
+/* Tab Button Styles */
+.tab-button {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+  border-color: var(--border-s);
+  color: var(--text);
+}
+
+.tab-button.active {
+  background: var(--text);
+  color: white;
+  border-color: var(--text);
+}
+
+/* Filter Button Styles */
+.filter-button {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-button:hover {
+  border-color: var(--border-s);
+}
+
+.filter-button.active {
+  background: var(--text);
+  color: white;
+  border-color: var(--text);
+}
+
+/* Selection */
+::selection {
+  background: rgba(26, 26, 26, 0.15);
+}
