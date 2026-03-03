@@ -1,18 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ARCHIVE_LOGS, ArchiveLog } from '@/data/archive-logs';
 import { MagicCard } from '../MagicCard';
 import { ArrowLeft, Download } from 'lucide-react';
 import { EntityIcon } from '../Icons';
 import { entities } from '@/lib/entities';
+import { getSupabase } from '@/lib/supabase';
+
+export const dynamic = 'force-dynamic';
+
+const INITIAL_LOGS = ARCHIVE_LOGS.filter(log => log.phase === 'initial');
+
+interface DynamicLog {
+  id: string;
+  date: string;
+  topic: string;
+  summary: string;
+  status: string;
+  transcript: { speaker: string; message: string }[];
+}
 
 const getEntityIcon = (entityId: string) => {
   const entity = entities.find(e => e.id === entityId);
   return entity?.icon || 'brain';
 };
 
-function generateDownloadContent(log: ArchiveLog): string {
+type AnyLog = ArchiveLog | DynamicLog;
+
+function generateDownloadContent(log: AnyLog): string {
   let content = `COUNCIL OF AGI — ARCHIVE LOG\n`;
   content += `ID: ${log.id}\n`;
   content += `Date: ${log.date}\n`;
@@ -27,7 +43,7 @@ function generateDownloadContent(log: ArchiveLog): string {
   return content;
 }
 
-function downloadTranscript(log: ArchiveLog) {
+function downloadTranscript(log: AnyLog) {
   const content = generateDownloadContent(log);
   const blob = new Blob([content], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
@@ -41,7 +57,40 @@ function downloadTranscript(log: ArchiveLog) {
 }
 
 export default function ArchiveLogsTab() {
-  const [selectedLog, setSelectedLog] = useState<ArchiveLog | null>(null);
+  const [selectedLog, setSelectedLog] = useState<ArchiveLog | DynamicLog | null>(null);
+  const [dynamicLogs, setDynamicLogs] = useState<DynamicLog[]>([]);
+
+  useEffect(() => {
+    async function fetchArchivedSessions() {
+      try {
+        const supabase = getSupabase();
+        const { data } = await supabase
+          .from('council_sessions')
+          .select('*')
+          .not('archived_at', 'is', null)
+          .order('archived_at', { ascending: false });
+        
+        if (data) {
+          setDynamicLogs(data.map((session: { id: string; log_id?: string; topic: string; messages: Array<{ entity: string; content: string }>; created_at: string; status: string }) => ({
+            id: session.log_id || `SESSION-${session.id.slice(0, 4).toUpperCase()}`,
+            topic: session.topic,
+            summary: 'Live council session archived',
+            date: new Date(session.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
+            status: session.status === 'COMPLETE' ? 'RESOLVED' : session.status,
+            transcript: (session.messages || []).map((m: { entity: string; content: string }) => ({
+              speaker: m.entity,
+              message: m.content,
+            })),
+          })));
+        }
+      } catch (error) {
+        console.error('Failed to fetch archived sessions:', error);
+      }
+    }
+    fetchArchivedSessions();
+  }, []);
+
+  const allLogs = [...dynamicLogs, ...INITIAL_LOGS];
 
   if (selectedLog) {
     return (
@@ -110,7 +159,7 @@ export default function ArchiveLogsTab() {
           <span className="font-ui text-[10px] uppercase tracking-[1px] text-[#444]"></span>
         </div>
 
-        {ARCHIVE_LOGS.map((log) => (
+        {allLogs.map((log) => (
           <MagicCard 
             key={log.id} 
             className="border-0 border-b border-[rgba(0,0,0,0.05)] last:border-b-0 cursor-pointer"

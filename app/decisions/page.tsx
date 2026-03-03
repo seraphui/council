@@ -12,7 +12,9 @@ export const dynamic = 'force-dynamic';
 // ============================================================================
 
 // Fixed global start time for universal sync
-const GLOBAL_START_TIME = new Date("2026-03-01T08:00:00Z").getTime();
+// UPDATE THIS before each major deploy - set to ~30 min before deploy time
+// This ensures 2-3 items are visible on launch, then more trickle in
+const GLOBAL_START_TIME = new Date("2026-03-03T19:30:00Z").getTime();
 
 // Timing configuration (in milliseconds)
 // FAST TEST MODE: Change these values for testing

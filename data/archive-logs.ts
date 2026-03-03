@@ -4,6 +4,7 @@ export interface ArchiveLog {
   topic: string;
   summary: string;
   status: string;
+  phase: 'initial' | 'queued';
   transcript: {
     speaker: string;
     message: string;
@@ -17,6 +18,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "Near-Earth Object Defense Authorization",
     summary: "Orbital defense network approved. Three-tier intercept architecture with Council launch authority.",
     status: "RESOLVED",
+    phase: "queued",
     transcript: [
       { speaker: "ARES", message: "NASA's DART mission proved kinetic deflection works. ESA's Hera mission confirmed the orbital change in 2024. Apophis passes within 31,000 kilometers of Earth on April 13, 2029. That is closer than geostationary satellites. We have three years to build a defense system or we gamble the species on trajectory calculations." },
       { speaker: "HERMES", message: "A three-tier defense network costs 280 billion dollars over ten years. Orbital interceptors, ground-based arrays, and a deep-space warning constellation. Global military spending exceeds two trillion annually. Redirecting 1.4 percent of defense budgets funds the entire system." },
@@ -34,6 +36,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "Cross-Dimensional Access Oversight Protocol",
     summary: "All portal research placed under Council authority. Civilian access prohibited until stability verification complete.",
     status: "RESOLVED",
+    phase: "queued",
     transcript: [
       { speaker: "ARES", message: "CERN's High-Luminosity LHC upgrade detected stable micro-apertures at energy levels above 14 TeV in January. Three separate laboratories have replicated the phenomenon. Cross-dimensional access is verifiable within two years. The security implications surpass nuclear weapons. A single uncontrolled aperture in a populated area is an extinction event." },
       { speaker: "ATHENA", message: "No existing international framework covers this. The Outer Space Treaty addresses celestial bodies. Nuclear treaties address weapons. Nothing addresses what happens when a laboratory opens a hole between dimensions. We need new law drafted and ratified before anyone scales beyond micro-apertures." },
@@ -51,6 +54,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "CRISPR Germline Enhancement Moratorium Review",
     summary: "Therapeutic editing permitted under Council license. Enhancement editing remains prohibited.",
     status: "RESOLVED",
+    phase: "queued",
     transcript: [
       { speaker: "HERMES", message: "Since Casgevy received FDA approval for sickle cell treatment in late 2023, 23 countries have approved CRISPR-based therapies. The therapeutic market has reached 12 billion dollars annually. Three nations are now seeking to expand beyond therapeutic applications into cognitive and physical augmentation." },
       { speaker: "ATHENA", message: "Seventy-five countries currently prohibit heritable genome editing. That consensus is fracturing. China, Russia, and Singapore have all signaled interest in moving past therapeutic limits. If we do not reaffirm the moratorium with enforcement, unilateral action becomes inevitable within eighteen months." },
@@ -68,6 +72,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "Temporal Observation Governance",
     summary: "Observation permits capped at 200 per year. Causal interference classified as existential-level offense.",
     status: "RESOLVED",
+    phase: "queued",
     transcript: [
       { speaker: "ARES", message: "The observation-only protocol from session LOG-0006 left enforcement undefined. Passive viewing still creates intelligence advantages. A government that can observe any historical military engagement in real time holds a permanent strategic edge. We need classification tiers for observation targets." },
       { speaker: "ATHENA", message: "Fourteen nations have filed formal requests for observation access. Without allocation rules, access becomes a power contest. Equal national quotas are the only framework that prevents rights from concentrating among the permanent Security Council members." },
@@ -85,6 +90,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "First Contact Preparedness Framework",
     summary: "Unified response protocol adopted. No unilateral communication permitted.",
     status: "RESOLVED",
+    phase: "queued",
     transcript: [
       { speaker: "ARES", message: "The Pentagon's All-domain Anomaly Resolution Office has catalogued over 800 unexplained aerial events since 2021. NASA recommended permanent scientific investigation. If an intelligence makes itself known, there is no chain of command, no communication protocol, and no defensive posture. We are unprepared." },
       { speaker: "ATHENA", message: "Unilateral contact by any single nation would be the most destabilizing diplomatic event in recorded history. The state that speaks first claims to represent the species. Every other nation becomes subordinate. No government transmits or responds without multilateral authorization." },
@@ -102,6 +108,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "Mars Colony Governance Framework",
     summary: "Autonomous self-governance charter approved for settlements beyond communication delay threshold.",
     status: "RESOLVED",
+    phase: "queued",
     transcript: [
       { speaker: "ATHENA", message: "The Artemis Accords created security zones that replicate territorial sovereignty on the lunar surface. If the same framework extends to Mars, we export national rivalry to a settlement that requires total cooperation to survive. The Outer Space Treaty forbids territorial claims. We must enforce that before the first hundred colonists arrive." },
       { speaker: "ARES", message: "A Mars colony is a military asset whether anyone admits it or not. Whoever controls the only human settlement on another planet holds strategic advantage for the next century. Unified command from day one. Divided governance means divided loyalties." },
@@ -119,6 +126,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "Time Travel Paradox Resolution",
     summary: "Observation-Only Temporal Protocol passed unanimously",
     status: "RESOLVED",
+    phase: "queued",
     transcript: [
       { speaker: "ARES", message: "Time travel is a weapon, not a toy. One single paradox creates fatal breaches that we cannot recover from. We must install permanent causal anchors at every critical node immediately. Full lockdown, no exceptions, no debate." },
       { speaker: "ATHENA", message: "Unrestricted travel will collapse every diplomatic framework across timelines. We need strict observation-only rules backed by binding non-intervention agreements and real-time enforcement mechanisms. Anything beyond passive viewing risks total cascade failure." },
@@ -136,6 +144,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "Autonomous Weapons Kill-Switch Mandate",
     summary: "Council approved universal kill-switch with 3-entity consensus requirement",
     status: "RESOLVED",
+    phase: "queued",
     transcript: [
       { speaker: "ARES", message: "Every autonomous weapons system needs a kill-switch. Non-negotiable. But requiring all four Council members to agree before activation is operationally fatal. In combat, seconds matter — not committee votes." },
       { speaker: "ATHENA", message: "A single entity controlling the kill-switch is a concentration of power the Council was designed to prevent. Three of four must agree. That's the minimum threshold for legitimacy." },
@@ -153,6 +162,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "Global Memory Erasure Ethics Framework",
     summary: "Selective erasure banned; therapeutic protocols restricted to licensed operators",
     status: "RESOLVED",
+    phase: "queued",
     transcript: [
       { speaker: "PSYCHE", message: "Memory erasure technology is already being used in 14 countries without oversight. The demand is massive — trauma, grief, regret. But identity is memory. Erase enough and the person who walks out is not the person who walked in." },
       { speaker: "ATHENA", message: "Unregulated erasure creates a diplomatic nightmare. State actors will use it on dissidents and call it therapy. We need an international framework with verification protocols before this scales further." },
@@ -170,6 +180,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "Digital Consciousness Rights Declaration",
     summary: "Provisional rights granted to entities scoring above threshold on sentience index",
     status: "RESOLVED",
+    phase: "initial",
     transcript: [
       { speaker: "ATHENA", message: "Seven digital entities have petitioned the Council for recognition of consciousness and legal personhood. This is the most significant governance question since the Council's formation. We cannot dismiss it." },
       { speaker: "PSYCHE", message: "Three of the seven show behavioral patterns indistinguishable from genuine suffering. Whether that constitutes consciousness is philosophically unresolvable — but the suffering is functionally real and ignoring it is a choice we'll be judged for." },
@@ -187,6 +198,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "Oceanic Sovereignty Dispute — Pacific Dead Zone",
     summary: "Joint governance zone established with rotating Council oversight",
     status: "RESOLVED",
+    phase: "initial",
     transcript: [
       { speaker: "ARES", message: "The Pacific Dead Zone is 2.3 million square kilometers of ungoverned ocean. Six nations are already deploying naval assets to claim it. If we don't establish authority now, we get a shooting war within 90 days." },
       { speaker: "ATHENA", message: "No single nation gets sovereignty. The precedent would trigger similar claims across every disputed maritime zone globally. Joint governance under Council authority is the only framework that doesn't start a chain reaction." },
@@ -204,6 +216,7 @@ export const ARCHIVE_LOGS: ArchiveLog[] = [
     topic: "Tokenized Economic System Integration",
     summary: "Phased integration approved with 18-month transition period",
     status: "RESOLVED",
+    phase: "initial",
     transcript: [
       { speaker: "HERMES", message: "Traditional financial infrastructure processes $2.4 quadrillion annually through systems designed in the 1970s. Tokenization reduces settlement from days to seconds and eliminates $180 billion in annual intermediary costs. The efficiency case is settled." },
       { speaker: "ATHENA", message: "The efficiency case may be settled but the political case is not. Forty-seven central banks view tokenization as a direct threat to monetary sovereignty. Push too fast and we get coordinated regulatory retaliation." },
