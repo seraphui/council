@@ -44,7 +44,7 @@ export const InfiniteGridBackground = ({ children }: { children: React.ReactNode
   );
 };
 
-const GridPattern = ({ offsetX, offsetY }: { offsetX: any; offsetY: any }) => (
+const GridPattern = ({ offsetX, offsetY }: { offsetX: unknown; offsetY: unknown }) => (
   <svg className="w-full h-full">
     <defs>
       <motion.pattern id="grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse" x={offsetX} y={offsetY}>

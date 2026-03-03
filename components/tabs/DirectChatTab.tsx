@@ -82,9 +82,10 @@ export default function DirectChatTab() {
         ...prev,
         [selectedEntity.id]: [...(prev[selectedEntity.id] || []), assistantMessage],
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('API Error:', error);
-      console.error('Error details:', error?.message, error?.stack);
+      const err = error as Error;
+      console.error('Error details:', err?.message, err?.stack);
       setIsOffline(true);
       const errorMessage: Message = {
         role: 'assistant',

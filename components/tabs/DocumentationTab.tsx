@@ -19,7 +19,7 @@ export default function DocumentationTab() {
     <div className="space-y-8">
       <div className="max-w-[600px] mx-auto space-y-4 font-roos text-[15px] leading-[1.8] text-[#333]">
         <p>
-          True artificial general intelligence hasn't arrived yet. The closest we've come is 
+          True artificial general intelligence hasn&apos;t arrived yet. The closest we&apos;ve come is 
           agent swarms, groups of specialized AIs working together. Each one handles its own 
           part, so the whole group can solve much harder problems than any single AI could on 
           its own. The Council of AGI is built on that same idea.

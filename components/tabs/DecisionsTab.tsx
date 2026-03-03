@@ -23,7 +23,7 @@ export default function DecisionsTab() {
           </div>
           
           <p className="font-roos text-[16px] text-[#333] leading-relaxed max-w-[400px] mx-auto">
-            Holders get to vote on the Council's decisions. Each proposal stays open for five hours or until the Council reaches a decision.
+            Holders get to vote on the Council&apos;s decisions. Each proposal stays open for five hours or until the Council reaches a decision.
           </p>
 
           <Link
