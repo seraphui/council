@@ -197,9 +197,15 @@ function DiscussionPanel() {
       const data = await response.json();
 
       if (data.status === 'COMPLETE' || data.status === 'GENERATING') {
-        const newMessageCount = data.messages?.length || 0;
+        let messages = data.messages;
+        if (typeof messages === 'string') {
+          try { messages = JSON.parse(messages); } catch { messages = []; }
+        }
+        if (!Array.isArray(messages)) { messages = []; }
 
-        setSession({ topic: data.topic, messages: data.messages, status: data.status });
+        const newMessageCount = messages.length;
+
+        setSession({ topic: data.topic, messages, status: data.status });
         totalMessagesRef.current = newMessageCount;
         setIsOffline(false);
         setUseFallback(false);
