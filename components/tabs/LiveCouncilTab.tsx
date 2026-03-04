@@ -250,6 +250,17 @@ function DiscussionPanel() {
     };
   }, [fetchSession]);
 
+  // Polling fallback for when Supabase Realtime isn't configured
+  useEffect(() => {
+    // Poll every 3 seconds while session is GENERATING or to catch new sessions
+    if (session?.status === 'GENERATING' || !session) {
+      const pollInterval = setInterval(() => {
+        fetchSession(false);
+      }, 3000);
+      return () => clearInterval(pollInterval);
+    }
+  }, [session?.status, fetchSession]);
+
   // Typing animation - reveals messages one by one
   useEffect(() => {
     if (isLoading || visibleMessages >= currentMessages.length) return;

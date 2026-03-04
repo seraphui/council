@@ -298,10 +298,23 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
         .eq('id', session.id);
     }
 
-    // ── Mark session complete ──
+    // ── Mark session complete with archive fields ──
+    // Get the next log ID (count existing archived sessions + start after LOG-0012)
+    const { count } = await supabase
+      .from('council_sessions')
+      .select('*', { count: 'exact', head: true })
+      .not('log_id', 'is', null);
+
+    const nextLogNum = (count || 0) + 13; // Start after LOG-0012 (hardcoded logs)
+    const logId = `LOG-${String(nextLogNum).padStart(4, '0')}`;
+
     await supabase
       .from('council_sessions')
-      .update({ status: 'COMPLETE' })
+      .update({ 
+        status: 'COMPLETE',
+        archived_at: new Date().toISOString(),
+        log_id: logId
+      })
       .eq('id', session.id);
 
     return NextResponse.json({
