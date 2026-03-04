@@ -89,13 +89,6 @@ const ROUND_CONTEXT = {
   verdict: `\n\nFinal round. Deliver your verdict. Be decisive. 2-3 sentences.`,
 };
 
-// Entity-specific opening phrases for prefill (forces in-character response)
-const prefills: Record<string, string> = {
-  ARES_WAR: 'Strategic assessment: ',
-  ATHENA_DIPLOMACY: 'From a diplomatic standpoint, ',
-  HERMES_ECONOMICS: 'The economic data indicates ',
-  PSYCHE_ORACLE: 'What lies beneath this question is ',
-};
 
 // ════════════════════════════════════
 // GET: Fetch the latest non-archived session for viewers
@@ -201,26 +194,15 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
         ? `Topic: ${debateTopic}\n\nPrevious:\n${prev}\n\nYour opening position.`
         : `Topic: ${debateTopic}\n\nYour opening position.`;
 
-      const prefill = prefills[entityId] || '';
-      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
-        { role: 'user', content: userContent }
-      ];
-      if (prefill) {
-        messages.push({ role: 'assistant', content: prefill });
-      }
-
       const res = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.opening,
-        messages,
+        messages: [{ role: 'user' as const, content: userContent }],
       });
 
       const text = res.content.find(b => b.type === 'text');
-      let responseText = text && 'text' in text ? text.text : '';
-      if (prefill && responseText) {
-        responseText = prefill + responseText;
-      }
+      const responseText = text && 'text' in text ? text.text : '';
 
       debateMessages.push({
         entity: ENTITY_NAMES[entityId],
@@ -241,26 +223,15 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
     for (const entityId of challengers) {
       const allStatements = debateMessages.map(m => `${m.entity}: ${m.content}`).join('\n\n');
 
-      const prefill = prefills[entityId] || '';
-      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
-        { role: 'user', content: `Topic: ${debateTopic}\n\nPositions:\n${allStatements}\n\nChallenge one entity by name.` }
-      ];
-      if (prefill) {
-        messages.push({ role: 'assistant', content: prefill });
-      }
-
       const res = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.challenge,
-        messages,
+        messages: [{ role: 'user' as const, content: `Topic: ${debateTopic}\n\nPositions:\n${allStatements}\n\nChallenge one entity by name.` }],
       });
 
       const text = res.content.find(b => b.type === 'text');
-      let responseText = text && 'text' in text ? text.text : '';
-      if (prefill && responseText) {
-        responseText = prefill + responseText;
-      }
+      const responseText = text && 'text' in text ? text.text : '';
 
       debateMessages.push({
         entity: ENTITY_NAMES[entityId],
@@ -280,26 +251,15 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
     for (const entityId of closers) {
       const allStatements = debateMessages.map(m => `${m.entity} (R${m.round}): ${m.content}`).join('\n\n');
 
-      const prefill = prefills[entityId] || '';
-      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
-        { role: 'user', content: `Topic: ${debateTopic}\n\nFull debate:\n${allStatements}\n\nYour final verdict.` }
-      ];
-      if (prefill) {
-        messages.push({ role: 'assistant', content: prefill });
-      }
-
       const res = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.verdict,
-        messages,
+        messages: [{ role: 'user' as const, content: `Topic: ${debateTopic}\n\nFull debate:\n${allStatements}\n\nYour final verdict.` }],
       });
 
       const text = res.content.find(b => b.type === 'text');
-      let responseText = text && 'text' in text ? text.text : '';
-      if (prefill && responseText) {
-        responseText = prefill + responseText;
-      }
+      const responseText = text && 'text' in text ? text.text : '';
 
       debateMessages.push({
         entity: ENTITY_NAMES[entityId],

@@ -104,19 +104,6 @@ function getSystemPrompt(id: string): string | null {
   return systemPrompts[key] || null;
 }
 
-// Entity-specific opening phrases for prefill (forces in-character response)
-const prefills: Record<string, string> = {
-  ARES: 'Strategic assessment: ',
-  ATHENA: 'From a diplomatic standpoint, ',
-  HERMES: 'The economic data indicates ',
-  PSYCHE: 'What you truly want to know is ',
-};
-
-function getPrefill(id: string): string {
-  const key = id?.replace('_WAR', '').replace('_DIPLOMACY', '').replace('_ECONOMICS', '').replace('_ORACLE', '');
-  return prefills[key] || '';
-}
-
 const groupChatAddition = `You are in a group discussion with the other Council entities and a human observer. You may reference what others said. Keep your response focused and don't repeat what other entities have already stated.`;
 
 const ENTITIES = [
@@ -178,30 +165,16 @@ export async function POST(request: NextRequest) {
 
       for (const entity of respondingEntities) {
         const systemPrompt = systemPrompts[entity.id] + '\n\n' + groupChatAddition;
-        const prefill = prefills[entity.id] || '';
-
-        const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
-          { role: 'user', content: context }
-        ];
-        
-        if (prefill) {
-          messages.push({ role: 'assistant', content: prefill });
-        }
 
         const result = await client.messages.create({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 200,
           system: systemPrompt,
-          messages,
+          messages: [{ role: 'user' as const, content: context }],
         });
 
         const textContent = result.content.find((block) => block.type === 'text');
-        let responseText = textContent && 'text' in textContent ? textContent.text : '';
-
-        // Prepend the prefill to the response since Claude continues from it
-        if (prefill && responseText) {
-          responseText = prefill + responseText;
-        }
+        const responseText = textContent && 'text' in textContent ? textContent.text : '';
 
         responses.push({
           entity: entity.id,
@@ -244,12 +217,6 @@ export async function POST(request: NextRequest) {
 
     messages.push({ role: 'user', content: message });
 
-    // Add assistant prefill to force in-character response
-    const prefill = getPrefill(entityId);
-    if (prefill) {
-      messages.push({ role: 'assistant', content: prefill });
-    }
-
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 300,
@@ -258,12 +225,7 @@ export async function POST(request: NextRequest) {
     });
 
     const textContent = response.content.find((block) => block.type === 'text');
-    let responseText = textContent && 'text' in textContent ? textContent.text : '';
-
-    // Prepend the prefill to the response since Claude continues from it
-    if (prefill && responseText) {
-      responseText = prefill + responseText;
-    }
+    const responseText = textContent && 'text' in textContent ? textContent.text : '';
 
     return NextResponse.json({
       response: responseText,
