@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
       const respondingEntities = shuffled.slice(0, respondingCount);
 
       const responses: Array<{ entity: string; content: string }> = [];
-      let context = `Human asks: "${message}"`;
+      let context = `Human asks: "${message.trim()}"`;
 
       for (const entity of respondingEntities) {
         const systemPrompt = systemPrompts[entity.id] + '\n\n' + groupChatAddition;
@@ -208,14 +208,15 @@ export async function POST(request: NextRequest) {
     
     if (Array.isArray(history)) {
       for (const msg of history.slice(-10)) {
-        messages.push({
-          role: msg.role === 'user' ? 'user' : 'assistant',
-          content: msg.content,
-        });
+        const content = (msg.content || '').trim();
+        if (!content) continue;
+        const role = msg.role === 'user' ? 'user' : 'assistant';
+        if (messages.length > 0 && messages[messages.length - 1].role === role) continue;
+        messages.push({ role, content });
       }
     }
 
-    messages.push({ role: 'user', content: message });
+    messages.push({ role: 'user', content: message.trim() });
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',

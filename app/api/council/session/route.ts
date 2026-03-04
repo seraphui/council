@@ -198,11 +198,11 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
         model: 'claude-sonnet-4-20250514',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.opening,
-        messages: [{ role: 'user' as const, content: userContent }],
+        messages: [{ role: 'user' as const, content: userContent.trim() }],
       });
 
       const text = res.content.find(b => b.type === 'text');
-      const responseText = text && 'text' in text ? text.text : '';
+      const responseText = (text && 'text' in text ? text.text : '').trim();
 
       debateMessages.push({
         entity: ENTITY_NAMES[entityId],
@@ -223,15 +223,16 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
     for (const entityId of challengers) {
       const allStatements = debateMessages.map(m => `${m.entity}: ${m.content}`).join('\n\n');
 
+      const challengeContent = `Topic: ${debateTopic}\n\nPositions:\n${allStatements}\n\nChallenge one entity by name.`;
       const res = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.challenge,
-        messages: [{ role: 'user' as const, content: `Topic: ${debateTopic}\n\nPositions:\n${allStatements}\n\nChallenge one entity by name.` }],
+        messages: [{ role: 'user' as const, content: challengeContent.trim() }],
       });
 
       const text = res.content.find(b => b.type === 'text');
-      const responseText = text && 'text' in text ? text.text : '';
+      const responseText = (text && 'text' in text ? text.text : '').trim();
 
       debateMessages.push({
         entity: ENTITY_NAMES[entityId],
@@ -251,15 +252,16 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
     for (const entityId of closers) {
       const allStatements = debateMessages.map(m => `${m.entity} (R${m.round}): ${m.content}`).join('\n\n');
 
+      const verdictContent = `Topic: ${debateTopic}\n\nFull debate:\n${allStatements}\n\nYour final verdict.`;
       const res = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.verdict,
-        messages: [{ role: 'user' as const, content: `Topic: ${debateTopic}\n\nFull debate:\n${allStatements}\n\nYour final verdict.` }],
+        messages: [{ role: 'user' as const, content: verdictContent.trim() }],
       });
 
       const text = res.content.find(b => b.type === 'text');
-      const responseText = text && 'text' in text ? text.text : '';
+      const responseText = (text && 'text' in text ? text.text : '').trim();
 
       debateMessages.push({
         entity: ENTITY_NAMES[entityId],
