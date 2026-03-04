@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // Rate limiting (in-memory, resets on redeploy)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 30; // requests per minute
@@ -37,6 +39,16 @@ const ENTITIES = [
   { id: 'HERMES', fullId: 'HERMES_ECONOMICS' },
   { id: 'PSYCHE', fullId: 'PSYCHE_ORACLE' },
 ];
+
+export async function GET() {
+  const hasApiKey = !!process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your-key-here';
+  return NextResponse.json({
+    status: 'ok',
+    route: '/api/chat',
+    hasApiKey,
+    timestamp: new Date().toISOString(),
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -161,8 +173,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Chat API error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: message },
       { status: 500 }
     );
   }
