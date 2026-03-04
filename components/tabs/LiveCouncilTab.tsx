@@ -18,7 +18,7 @@ interface SessionMessage {
 interface Session {
   topic: string;
   messages: SessionMessage[];
-  status?: string;
+  status: string;
 }
 
 function CouncilFormation() {
@@ -175,7 +175,10 @@ function DiscussionPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [useFallback, setUseFallback] = useState(true);
-  const [totalMessages, setTotalMessages] = useState<number>(0);
+
+  // Use refs for values accessed inside fetchSession to keep the callback stable
+  // (prevents infinite re-render loop from useCallback/useEffect dependency chains)
+  const totalMessagesRef = useRef<number>(0);
 
   const currentMessages = session?.messages || (useFallback ? sampleMessages.map(m => ({ entity: m.entity, content: m.message })) : []);
 
@@ -192,26 +195,19 @@ function DiscussionPanel() {
       const response = await fetch('/api/council/session');
       if (!response.ok) throw new Error('Failed to fetch session');
       const data = await response.json();
-      
+
       if (data.status === 'COMPLETE' || data.status === 'GENERATING') {
         const newMessageCount = data.messages?.length || 0;
-        const prevMessageCount = totalMessages;
-        
+
         setSession({ topic: data.topic, messages: data.messages, status: data.status });
-        setTotalMessages(newMessageCount);
+        totalMessagesRef.current = newMessageCount;
         setIsOffline(false);
         setUseFallback(false);
-        
-        // If new messages arrived via realtime, the typing animation will pick them up
-        // Don't reset visibleMessages - let the animation continue from where it was
+
         if (isInitialLoad) {
           setVisibleMessages(0);
-        } else if (newMessageCount > prevMessageCount && visibleMessages >= prevMessageCount) {
-          // New messages arrived and we've shown all previous ones
-          // The useEffect below will handle showing the new ones with animation
         }
       } else {
-        // No active session - use fallback sample messages
         setSession(null);
         setUseFallback(true);
         setIsOffline(false);
@@ -228,8 +224,9 @@ function DiscussionPanel() {
         setIsLoading(false);
       }
     }
-  }, [totalMessages, visibleMessages]);
+  }, []); // Stable callback — no state dependencies
 
+  // Initial fetch + Supabase Realtime subscription (runs once)
   useEffect(() => {
     fetchSession(true);
 
@@ -252,28 +249,26 @@ function DiscussionPanel() {
 
   // Polling fallback for when Supabase Realtime isn't configured
   useEffect(() => {
-    // Poll every 3 seconds while session is GENERATING or to catch new sessions
-    if (session?.status === 'GENERATING' || !session) {
-      const pollInterval = setInterval(() => {
-        fetchSession(false);
-      }, 3000);
-      return () => clearInterval(pollInterval);
-    }
+    const interval = session?.status === 'GENERATING' ? 3000 : 5000;
+    const pollInterval = setInterval(() => {
+      fetchSession(false);
+    }, interval);
+    return () => clearInterval(pollInterval);
   }, [session?.status, fetchSession]);
 
-  // Typing animation - reveals messages one by one
+  // Typing animation — reveals messages one by one
   useEffect(() => {
     if (isLoading || visibleMessages >= currentMessages.length) return;
 
     const nextEntity = currentMessages[visibleMessages]?.entity;
     setThinkingEntity(nextEntity || null);
-    
+
     const delay = 2000 + Math.random() * 1000;
     const timer = setTimeout(() => {
       setThinkingEntity(null);
       setVisibleMessages((prev) => prev + 1);
     }, delay);
-    
+
     return () => clearTimeout(timer);
   }, [visibleMessages, currentMessages.length, isLoading]);
 
@@ -287,29 +282,29 @@ function DiscussionPanel() {
 
   return (
     <div className="border border-[rgba(0,0,0,0.1)]">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-5 py-3 border-b border-[rgba(0,0,0,0.1)] gap-2">
-        <div className="flex-1 min-w-0">
-          <span className="font-ui text-[11px] uppercase tracking-[1px] break-words whitespace-normal">
+      <div className="px-5 py-3 border-b border-[rgba(0,0,0,0.1)]">
+        <div className="flex items-start justify-between gap-4">
+          <p className="font-ui text-[11px] uppercase tracking-[1px]" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
             {session?.topic ? `Topic: ${session.topic}` : 'Council Session — Active'}
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          {isOffline && (
-            <span className="font-mono text-[10px] text-red-600">Council Offline</span>
-          )}
-          <span className="font-mono text-[10px] text-[#444] flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500'} animate-pulse`} />
-            {isLoading ? 'Connecting...' : 'Monitoring'}
-          </span>
+          </p>
+          <div className="flex items-center gap-4 flex-shrink-0">
+            {isOffline && (
+              <span className="font-mono text-[10px] text-red-600">Council Offline</span>
+            )}
+            <span className="font-mono text-[10px] text-[#444] flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500'} animate-pulse`} />
+              {isLoading ? 'Connecting...' : session?.status === 'GENERATING' ? 'Live' : 'Monitoring'}
+            </span>
+          </div>
         </div>
       </div>
-      
+
       <div className="max-h-[400px] overflow-y-auto">
         {currentMessages.slice(0, visibleMessages).map((msg, index) => {
           const entity = getEntity(msg.entity);
           return (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="flex gap-4 px-5 py-4 border-b border-[rgba(0,0,0,0.05)] animate-fade-up"
             >
               <div className="w-8 h-8 rounded-full bg-white/70 backdrop-blur border border-[rgba(0,0,0,0.1)] flex items-center justify-center flex-shrink-0">
@@ -325,7 +320,7 @@ function DiscussionPanel() {
             </div>
           );
         })}
-        
+
         {thinkingEntity && (
           <div className="px-5 py-3 text-center">
             <span className="font-mono text-[10px] text-[#444] italic">
@@ -334,7 +329,7 @@ function DiscussionPanel() {
           </div>
         )}
       </div>
-      
+
       <div className="px-5 py-3 bg-[rgba(0,0,0,0.02)] border-t border-[rgba(0,0,0,0.1)]">
         <p className="font-mono text-[10px] text-[#444] text-center">
           {isOffline ? 'Showing archived session. Council is currently offline.' : 'Live council discussions are classified. Observer access only.'}
