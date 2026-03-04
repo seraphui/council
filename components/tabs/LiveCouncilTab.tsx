@@ -1,11 +1,10 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { entities, sampleMessages } from '@/lib/entities';
+import { entities } from '@/lib/entities';
 import { EntityIcon, HumanSilhouette } from '../Icons';
 import { MagicCard } from '../MagicCard';
 import { AnimatedBeam } from '../AnimatedBeam';
-import { getSupabase } from '@/lib/supabase';
 
 interface SessionMessage {
   entity: string;
@@ -19,7 +18,10 @@ interface Session {
   topic: string;
   messages: SessionMessage[];
   status: string;
+  id: string;
 }
+
+type Phase = 'loading' | 'revealing' | 'concluded' | 'idle';
 
 function CouncilFormation() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -170,147 +172,128 @@ function EntityGrid() {
 
 function DiscussionPanel() {
   const [session, setSession] = useState<Session | null>(null);
-  const [visibleMessages, setVisibleMessages] = useState<number>(0);
+  const [visibleMessages, setVisibleMessages] = useState(0);
   const [thinkingEntity, setThinkingEntity] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
-  const [useFallback, setUseFallback] = useState(true);
+  const [phase, setPhase] = useState<Phase>('loading');
+  const sessionIdRef = useRef<string | null>(null);
 
-  // Use refs for values accessed inside fetchSession to keep the callback stable
-  // (prevents infinite re-render loop from useCallback/useEffect dependency chains)
-  const totalMessagesRef = useRef<number>(0);
-
-  const currentMessages = session?.messages || (useFallback ? sampleMessages.map(m => ({ entity: m.entity, content: m.message })) : []);
-
-  const fetchSession = useCallback(async (isInitialLoad = false) => {
-    if (isInitialLoad) {
-      setIsLoading(true);
-      setVisibleMessages(0);
-      setThinkingEntity(null);
-      setSession(null);
-      setUseFallback(false);
-    }
-
+  const fetchSession = useCallback(async () => {
+    const excludeParam = sessionIdRef.current ? `?exclude=${sessionIdRef.current}` : '';
     try {
-      const response = await fetch('/api/council/session');
-      if (!response.ok) throw new Error('Failed to fetch session');
+      const response = await fetch(`/api/council/session${excludeParam}`);
+      if (!response.ok) throw new Error('Failed to fetch');
       const data = await response.json();
 
-      if (data.status === 'COMPLETE' || data.status === 'GENERATING') {
+      if (data.status === 'COMPLETE' && data.id && data.messages?.length > 0) {
         let messages = data.messages;
         if (typeof messages === 'string') {
           try { messages = JSON.parse(messages); } catch { messages = []; }
         }
-        if (!Array.isArray(messages)) { messages = []; }
+        if (!Array.isArray(messages)) messages = [];
 
-        const newMessageCount = messages.length;
-
-        setSession({ topic: data.topic, messages, status: data.status });
-        totalMessagesRef.current = newMessageCount;
-        setIsOffline(false);
-        setUseFallback(false);
-
-        if (isInitialLoad) {
-          setVisibleMessages(0);
-        }
+        sessionIdRef.current = data.id;
+        setSession({ topic: data.topic, messages, status: data.status, id: data.id });
+        setVisibleMessages(0);
+        setThinkingEntity(null);
+        setPhase('revealing');
       } else {
-        setSession(null);
-        setUseFallback(true);
-        setIsOffline(false);
-        if (isInitialLoad) {
-          setVisibleMessages(0);
-        }
+        setPhase('idle');
       }
-    } catch (error) {
-      console.error('Council offline:', error);
-      setIsOffline(true);
-      setUseFallback(true);
-    } finally {
-      if (isInitialLoad) {
-        setIsLoading(false);
-      }
+    } catch {
+      setPhase('idle');
     }
-  }, []); // Stable callback — no state dependencies
+  }, []);
 
-  // Initial fetch + Supabase Realtime subscription (runs once)
+  // Initial fetch on mount
   useEffect(() => {
-    fetchSession(true);
-
-    const supabase = getSupabase();
-    const channel = supabase
-      .channel('council-session')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'council_sessions' },
-        () => {
-          fetchSession(false);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    fetchSession();
   }, [fetchSession]);
 
-  // Polling fallback for when Supabase Realtime isn't configured
+  // Revealing: show next message every 7 seconds
   useEffect(() => {
-    const interval = session?.status === 'GENERATING' ? 3000 : 5000;
-    const pollInterval = setInterval(() => {
-      fetchSession(false);
-    }, interval);
-    return () => clearInterval(pollInterval);
-  }, [session?.status, fetchSession]);
+    if (phase !== 'revealing' || !session) return;
 
-  // Typing animation — reveals messages one by one
-  useEffect(() => {
-    if (isLoading || visibleMessages >= currentMessages.length) return;
+    if (visibleMessages >= session.messages.length) {
+      setThinkingEntity(null);
+      setPhase('concluded');
+      return;
+    }
 
-    const nextEntity = currentMessages[visibleMessages]?.entity;
+    const nextEntity = session.messages[visibleMessages]?.entity;
     setThinkingEntity(nextEntity || null);
 
-    const delay = 2000 + Math.random() * 1000;
     const timer = setTimeout(() => {
       setThinkingEntity(null);
-      setVisibleMessages((prev) => prev + 1);
-    }, delay);
+      setVisibleMessages(prev => prev + 1);
+    }, 7000);
 
     return () => clearTimeout(timer);
-  }, [visibleMessages, currentMessages.length, isLoading]);
+  }, [phase, visibleMessages, session]);
+
+  // Concluded: wait 2 minutes, archive, then fetch next session
+  useEffect(() => {
+    if (phase !== 'concluded' || !session) return;
+
+    const timer = setTimeout(async () => {
+      if (session.id) {
+        await fetch('/api/council/session/archive', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: session.id }),
+        }).catch(() => {});
+      }
+      fetchSession();
+    }, 120000); // 2 minutes
+
+    return () => clearTimeout(timer);
+  }, [phase, session, fetchSession]);
+
+  // Idle: poll for new sessions every 10 seconds
+  useEffect(() => {
+    if (phase !== 'idle') return;
+    const interval = setInterval(fetchSession, 10000);
+    return () => clearInterval(interval);
+  }, [phase, fetchSession]);
 
   const getEntity = (id: string) => entities.find((e) => e.id === id);
 
   const formatTime = (index: number) => {
     const base = new Date();
-    base.setMinutes(base.getMinutes() - (currentMessages.length - index) * 2);
+    base.setMinutes(base.getMinutes() - ((session?.messages.length || 1) - index) * 2);
     return base.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
+
+  const statusDot = phase === 'revealing' ? 'bg-green-500'
+    : phase === 'concluded' ? 'bg-yellow-500'
+    : 'bg-gray-400';
+
+  const statusText = phase === 'loading' ? 'Connecting...'
+    : phase === 'revealing' ? 'Live Session'
+    : phase === 'concluded' ? 'Session Concluded'
+    : 'Standby';
 
   return (
     <div className="border border-[rgba(0,0,0,0.1)]">
       <div className="px-5 py-3 border-b border-[rgba(0,0,0,0.1)]">
         <div className="flex items-start justify-between gap-4">
           <p className="font-ui text-[11px] uppercase tracking-[1px]" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-            {session?.topic ? `Topic: ${session.topic}` : 'Council Session — Active'}
+            {session?.topic ? `Topic: ${session.topic}` : 'Council Session'}
           </p>
           <div className="flex items-center gap-4 flex-shrink-0">
-            {isOffline && (
-              <span className="font-mono text-[10px] text-red-600">Council Offline</span>
-            )}
             <span className="font-mono text-[10px] text-[#444] flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500'} animate-pulse`} />
-              {isLoading ? 'Connecting...' : session?.status === 'GENERATING' ? 'Live' : 'Monitoring'}
+              <span className={`w-2 h-2 rounded-full ${statusDot} animate-pulse`} />
+              {statusText}
             </span>
           </div>
         </div>
       </div>
 
       <div className="max-h-[400px] overflow-y-auto">
-        {currentMessages.slice(0, visibleMessages).map((msg, index) => {
+        {session && session.messages.slice(0, visibleMessages).map((msg, index) => {
           const entity = getEntity(msg.entity);
           return (
             <div
-              key={index}
+              key={`${session.id}-${index}`}
               className="flex gap-4 px-5 py-4 border-b border-[rgba(0,0,0,0.05)] animate-fade-up"
             >
               <div className="w-8 h-8 rounded-full bg-white/70 backdrop-blur border border-[rgba(0,0,0,0.1)] flex items-center justify-center flex-shrink-0">
@@ -327,10 +310,34 @@ function DiscussionPanel() {
           );
         })}
 
-        {thinkingEntity && (
+        {thinkingEntity && phase === 'revealing' && (
           <div className="px-5 py-3 text-center">
             <span className="font-mono text-[10px] text-[#444] italic">
               {thinkingEntity} is deliberating...
+            </span>
+          </div>
+        )}
+
+        {phase === 'concluded' && (
+          <div className="px-5 py-4 text-center">
+            <span className="font-mono text-[10px] text-[#444] italic">
+              Session concluded. The Council will reconvene shortly.
+            </span>
+          </div>
+        )}
+
+        {phase === 'idle' && (
+          <div className="px-5 py-6 text-center">
+            <span className="font-mono text-[10px] text-[#444] italic">
+              The Council will reconvene shortly.
+            </span>
+          </div>
+        )}
+
+        {phase === 'loading' && (
+          <div className="px-5 py-6 text-center">
+            <span className="font-mono text-[10px] text-[#444] italic">
+              Connecting to Council chambers...
             </span>
           </div>
         )}
@@ -338,7 +345,7 @@ function DiscussionPanel() {
 
       <div className="px-5 py-3 bg-[rgba(0,0,0,0.02)] border-t border-[rgba(0,0,0,0.1)]">
         <p className="font-mono text-[10px] text-[#444] text-center">
-          {isOffline ? 'Showing archived session. Council is currently offline.' : 'Live council discussions are classified. Observer access only.'}
+          Live council discussions are classified. Observer access only.
         </p>
       </div>
     </div>

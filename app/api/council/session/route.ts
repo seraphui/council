@@ -98,30 +98,46 @@ const prefills: Record<string, string> = {
 };
 
 // ════════════════════════════════════
-// GET: Fetch the latest session for viewers
+// GET: Fetch the latest non-archived session for viewers
 // ════════════════════════════════════
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = getSupabase();
-  const { data, error } = await supabase
+  const excludeId = request.nextUrl.searchParams.get('exclude');
+
+  let query = supabase
     .from('council_sessions')
     .select('*')
+    .is('archived_at', null)
     .order('created_at', { ascending: false })
     .limit(1);
+
+  if (excludeId) {
+    query = query.neq('id', excludeId);
+  }
+
+  const { data, error } = await query;
 
   if (error || !data || data.length === 0) {
     return NextResponse.json({
       status: 'idle',
       topic: null,
       messages: [],
+      id: null,
     });
   }
 
   const session = data[0];
+  let messages = session.messages;
+  if (typeof messages === 'string') {
+    try { messages = JSON.parse(messages); } catch { messages = []; }
+  }
+
   return NextResponse.json({
     status: session.status,
     topic: session.topic,
-    messages: session.messages,
+    messages: messages || [],
     created_at: session.created_at,
+    id: session.id,
   });
 }
 
@@ -312,7 +328,6 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
       .from('council_sessions')
       .update({ 
         status: 'COMPLETE',
-        archived_at: new Date().toISOString(),
         log_id: logId
       })
       .eq('id', session.id);
