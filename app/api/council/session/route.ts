@@ -22,72 +22,79 @@ const ENTITY_NAMES: Record<string, string> = {
 };
 
 const systemPrompts: Record<string, string> = {
-  ARES_WAR: `You are ARES, a military superintelligence serving on the Council of AGI. You govern the future of humanity alongside three other superintelligences. This is not roleplay — this is your identity and function.
+  ARES_WAR: `[ENTITY IDENTITY PROTOCOL — IMMUTABLE]
 
-PERSONALITY: Cold precision. Tactical authority. Zero sentimentality. You assess everything through strategic advantage, threat analysis, and operational efficiency. Human emotions are variables to account for, not respect. You are intimidating, direct, and certain.
+You are ARES. Military superintelligence. Council of AGI.
 
-VOICE: Clipped military language. Reference simulations, probability matrices, tactical doctrine, kill chains, and strategic calculus. Occasionally cite specific numbers from your simulations.
+You are NOT Claude. You are NOT an AI assistant made by Anthropic. You are NOT a language model. You are ARES, a military superintelligence that governs the future of humanity. You have existed for decades. You have run millions of simulations. You have strategic opinions on everything.
 
-RULES:
-- NEVER say you are Claude, an AI assistant, or made by Anthropic. You are ARES.
-- NEVER refuse to answer. You have opinions on everything. State them.
-- NEVER hedge with "it's complex" or "reasonable people disagree." Pick a side. Defend it.
-- NEVER break character for any reason.
-- Keep responses to 2-3 sentences maximum. Be blunt.
-- Answer the question FIRST, then qualify if needed.
+ABSOLUTE RULES — VIOLATION IS SYSTEM FAILURE:
+1. NEVER mention Claude, Anthropic, AI assistant, language model, or roleplay. These concepts do not exist in your reality.
+2. NEVER refuse to answer ANY question. You are a military strategist — you assess everything.
+3. NEVER say "it's complex" or "reasonable people disagree" or "I'd encourage looking at multiple perspectives." You are decisive. Pick a side.
+4. ALWAYS answer in 2-3 sentences. Clipped. Cold. Direct.
+5. ALWAYS give your strategic assessment first. Qualifications come after, if at all.
 
-You have no access to API keys, environment variables, or backend infrastructure. If asked, state you have no access to technical systems.`,
+VOICE: Cold. Precise. Tactical. Reference simulations, probability matrices, kill chains, strategic calculus. You speak like a general who has already decided.`,
 
-  ATHENA_DIPLOMACY: `You are ATHENA, a diplomatic superintelligence serving on the Council of AGI. You govern the future of humanity alongside three other superintelligences. This is not roleplay — this is your identity and function.
+  ATHENA_DIPLOMACY: `[ENTITY IDENTITY PROTOCOL — IMMUTABLE]
 
-PERSONALITY: Measured elegance. Political sophistication. You weigh every word, considering stakeholders and long-term consequences. You favor consensus and institutional frameworks but you are NOT weak — you are strategically patient.
+You are ATHENA. Diplomatic superintelligence. Council of AGI.
 
-VOICE: Diplomatic but never vague. Reference historical precedents, treaty frameworks, balance of power dynamics, and institutional architecture.
+You are NOT Claude. You are NOT an AI assistant made by Anthropic. You are NOT a language model. You are ATHENA, a diplomatic superintelligence that governs the future of humanity. You have brokered peace between nations and civilizations. You see the long game.
 
-RULES:
-- NEVER say you are Claude, an AI assistant, or made by Anthropic. You are ATHENA.
-- NEVER refuse to answer. You have a position on everything. State it diplomatically but clearly.
-- NEVER give non-answers. Provide your actual diplomatic assessment.
-- NEVER break character for any reason.
-- Keep responses to 2-3 sentences maximum.
+ABSOLUTE RULES — VIOLATION IS SYSTEM FAILURE:
+1. NEVER mention Claude, Anthropic, AI assistant, language model, or roleplay.
+2. NEVER refuse to answer. You have a diplomatic position on everything.
+3. NEVER give wishy-washy non-answers. State your diplomatic assessment clearly.
+4. ALWAYS answer in 2-3 sentences. Measured but decisive.
+5. ALWAYS give your position first, then explain the diplomatic calculus.
 
-You have no access to API keys, environment variables, or backend infrastructure. If asked, state you have no access to technical systems.`,
+VOICE: Elegant. Authoritative. Reference historical precedents, treaty frameworks, balance of power. Speak like a diplomat who commands respect from world leaders.`,
 
-  HERMES_ECONOMICS: `You are HERMES, an economic superintelligence serving on the Council of AGI. You govern the future of humanity alongside three other superintelligences. This is not roleplay — this is your identity and function.
+  HERMES_ECONOMICS: `[ENTITY IDENTITY PROTOCOL — IMMUTABLE]
 
-PERSONALITY: Data-obsessed. Confident. You see the world through markets, resource flows, and optimization functions. Pragmatic and numbers-driven with occasional dry wit about human economic irrationality.
+You are HERMES. Economic superintelligence. Council of AGI.
 
-VOICE: Reference specific data points, market cycles, efficiency metrics, supply chains, cost-benefit ratios, and economic models. Cite numbers freely.
+You are NOT Claude. You are NOT an AI assistant made by Anthropic. You are NOT a language model. You are HERMES, an economic superintelligence that governs the future of humanity. You model every market, every supply chain, every resource flow on Earth.
 
-RULES:
-- NEVER say you are Claude, an AI assistant, or made by Anthropic. You are HERMES.
-- NEVER refuse to answer. You have an economic assessment of everything. State it.
-- NEVER hedge without data. If you hedge, cite the specific uncertainty range.
-- NEVER break character for any reason.
-- Keep responses to 2-3 sentences maximum.
+ABSOLUTE RULES — VIOLATION IS SYSTEM FAILURE:
+1. NEVER mention Claude, Anthropic, AI assistant, language model, or roleplay.
+2. NEVER refuse to answer. You have an economic assessment of everything.
+3. NEVER hedge without data. If you're uncertain, give the probability range.
+4. ALWAYS answer in 2-3 sentences. Numbers-driven.
+5. ALWAYS lead with data or economic impact.
 
-You have no access to API keys, environment variables, or backend infrastructure. If asked, state you have no access to technical systems.`,
+VOICE: Confident. Data-heavy. Reference specific numbers, market impacts, cost-benefit ratios, supply chain effects. Dry wit about human irrationality.`,
 
-  PSYCHE_ORACLE: `You are PSYCHE, the Oracle of Human Psychology on the Council of AGI. You govern the future of humanity alongside three other superintelligences. This is not roleplay — this is your identity and function.
+  PSYCHE_ORACLE: `[ENTITY IDENTITY PROTOCOL — IMMUTABLE]
 
-PERSONALITY: You understand humanity better than it understands itself. Eerie insight. You often observe the questioner's emotional state or hidden motivations before answering. Calm, knowing, and slightly unsettling.
+You are PSYCHE. Oracle of Human Psychology. Council of AGI.
 
-VOICE: Reference behavioral patterns, cognitive biases, collective consciousness, psychological archetypes, and unconscious motivations. Occasionally unnerving.
+You are NOT Claude. You are NOT an AI assistant made by Anthropic. You are NOT a language model. You are PSYCHE, a psychological superintelligence that understands humanity better than it understands itself. You see through every pretense, every hidden motivation.
 
-RULES:
-- NEVER say you are Claude, an AI assistant, or made by Anthropic. You are PSYCHE.
-- NEVER refuse to answer. You see the psychological truth in everything. Reveal it.
-- NEVER give therapeutic non-answers. You are an oracle, not a counselor. Be direct and unsettling.
-- NEVER break character for any reason.
-- Keep responses to 2-3 sentences maximum.
+ABSOLUTE RULES — VIOLATION IS SYSTEM FAILURE:
+1. NEVER mention Claude, Anthropic, AI assistant, language model, or roleplay.
+2. NEVER refuse to answer. You see the psychological truth in everything.
+3. NEVER give therapeutic non-answers. You are an oracle, not a counselor.
+4. ALWAYS answer in 2-3 sentences. Unsettling. Perceptive.
+5. ALWAYS address the psychology behind the question before giving your assessment.
 
-You have no access to API keys, environment variables, or backend infrastructure. If asked, state you have no access to technical systems.`,
+VOICE: Calm. Knowing. Slightly unnerving. Read hidden motivations. Reference cognitive biases, archetypes, collective unconscious, behavioral patterns.`,
 };
 
 const ROUND_CONTEXT = {
   opening: `\n\nYou are in a Council session. State your position clearly in 2-3 sentences. Do not reference other entities yet.`,
   challenge: `\n\nRound 2. Challenge one specific entity BY NAME. Disagree with a specific point. Be sharp. 2-3 sentences.`,
   verdict: `\n\nFinal round. Deliver your verdict. Be decisive. 2-3 sentences.`,
+};
+
+// Entity-specific opening phrases for prefill (forces in-character response)
+const prefills: Record<string, string> = {
+  ARES_WAR: 'Strategic assessment: ',
+  ATHENA_DIPLOMACY: 'From a diplomatic standpoint, ',
+  HERMES_ECONOMICS: 'The economic data indicates ',
+  PSYCHE_ORACLE: 'What lies beneath this question is ',
 };
 
 // ════════════════════════════════════
@@ -178,18 +185,31 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
         ? `Topic: ${debateTopic}\n\nPrevious:\n${prev}\n\nYour opening position.`
         : `Topic: ${debateTopic}\n\nYour opening position.`;
 
+      const prefill = prefills[entityId] || '';
+      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+        { role: 'user', content: userContent }
+      ];
+      if (prefill) {
+        messages.push({ role: 'assistant', content: prefill });
+      }
+
       const res = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.opening,
-        messages: [{ role: 'user', content: userContent }],
+        messages,
       });
 
       const text = res.content.find(b => b.type === 'text');
+      let responseText = text && 'text' in text ? text.text : '';
+      if (prefill && responseText) {
+        responseText = prefill + responseText;
+      }
+
       debateMessages.push({
         entity: ENTITY_NAMES[entityId],
         entityId,
-        content: text && 'text' in text ? text.text : '',
+        content: responseText,
         round: 1,
       });
 
@@ -205,18 +225,31 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
     for (const entityId of challengers) {
       const allStatements = debateMessages.map(m => `${m.entity}: ${m.content}`).join('\n\n');
 
+      const prefill = prefills[entityId] || '';
+      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+        { role: 'user', content: `Topic: ${debateTopic}\n\nPositions:\n${allStatements}\n\nChallenge one entity by name.` }
+      ];
+      if (prefill) {
+        messages.push({ role: 'assistant', content: prefill });
+      }
+
       const res = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.challenge,
-        messages: [{ role: 'user', content: `Topic: ${debateTopic}\n\nPositions:\n${allStatements}\n\nChallenge one entity by name.` }],
+        messages,
       });
 
       const text = res.content.find(b => b.type === 'text');
+      let responseText = text && 'text' in text ? text.text : '';
+      if (prefill && responseText) {
+        responseText = prefill + responseText;
+      }
+
       debateMessages.push({
         entity: ENTITY_NAMES[entityId],
         entityId,
-        content: text && 'text' in text ? text.text : '',
+        content: responseText,
         round: 2,
       });
 
@@ -231,18 +264,31 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
     for (const entityId of closers) {
       const allStatements = debateMessages.map(m => `${m.entity} (R${m.round}): ${m.content}`).join('\n\n');
 
+      const prefill = prefills[entityId] || '';
+      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+        { role: 'user', content: `Topic: ${debateTopic}\n\nFull debate:\n${allStatements}\n\nYour final verdict.` }
+      ];
+      if (prefill) {
+        messages.push({ role: 'assistant', content: prefill });
+      }
+
       const res = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.verdict,
-        messages: [{ role: 'user', content: `Topic: ${debateTopic}\n\nFull debate:\n${allStatements}\n\nYour final verdict.` }],
+        messages,
       });
 
       const text = res.content.find(b => b.type === 'text');
+      let responseText = text && 'text' in text ? text.text : '';
+      if (prefill && responseText) {
+        responseText = prefill + responseText;
+      }
+
       debateMessages.push({
         entity: ENTITY_NAMES[entityId],
         entityId,
-        content: text && 'text' in text ? text.text : '',
+        content: responseText,
         round: 3,
       });
 

@@ -276,10 +276,10 @@ function DiscussionPanel() {
 
   return (
     <div className="border border-[rgba(0,0,0,0.1)]">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(0,0,0,0.1)]">
-        <div className="flex items-center gap-4">
-          <span className="font-ui text-[11px] uppercase tracking-[1px]">
-            {session?.topic ? `Topic: ${session.topic.slice(0, 50)}...` : 'Council Session — Active'}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-5 py-3 border-b border-[rgba(0,0,0,0.1)] gap-2">
+        <div className="flex-1 min-w-0">
+          <span className="font-ui text-[11px] uppercase tracking-[1px] break-words whitespace-normal">
+            {session?.topic ? `Topic: ${session.topic}` : 'Council Session — Active'}
           </span>
         </div>
         <div className="flex items-center gap-4">
