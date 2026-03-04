@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 function getSupabase() {
   return createClient(
@@ -302,6 +303,7 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
 
   } catch (error) {
     console.error('Council session error:', error);
-    return NextResponse.json({ error: 'Failed to generate session' }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: 'Failed to generate session', details: message }, { status: 500 });
   }
 }

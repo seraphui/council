@@ -24,10 +24,15 @@ export default function AdminCouncil() {
         }),
       });
 
-      const data = await res.json();
-      setResult(data);
-    } catch {
-      setResult({ error: 'Failed to trigger debate' });
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        setResult({ status: res.status, ...data });
+      } catch {
+        setResult({ status: res.status, rawResponse: text.slice(0, 500) });
+      }
+    } catch (err) {
+      setResult({ error: 'Network error — request failed or timed out', details: String(err) });
     }
 
     setLoading(false);

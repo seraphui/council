@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
 
 // Rate limiting (in-memory, resets on redeploy)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -114,13 +115,38 @@ const ENTITIES = [
 ];
 
 export async function GET() {
-  const hasApiKey = !!process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your-key-here';
-  return NextResponse.json({
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const hasApiKey = !!apiKey && apiKey !== 'your-key-here';
+  const keyPrefix = apiKey ? apiKey.slice(0, 12) + '...' : 'NOT SET';
+
+  const diagnostics: Record<string, unknown> = {
     status: 'ok',
     route: '/api/chat',
     hasApiKey,
+    keyPrefix,
+    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    hasAdminSecret: !!process.env.COUNCIL_ADMIN_SECRET,
     timestamp: new Date().toISOString(),
-  });
+  };
+
+  if (hasApiKey) {
+    try {
+      const client = new Anthropic({ apiKey });
+      const testResponse = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 10,
+        messages: [{ role: 'user', content: 'Say "ok"' }],
+      });
+      diagnostics.apiTest = 'SUCCESS';
+      diagnostics.modelUsed = testResponse.model;
+    } catch (err) {
+      diagnostics.apiTest = 'FAILED';
+      diagnostics.apiError = String(err);
+    }
+  }
+
+  return NextResponse.json(diagnostics);
 }
 
 export async function POST(request: NextRequest) {
@@ -234,7 +260,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Chat API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: 'Internal server error', details: message }, { status: 500 });
   }
 }
 
