@@ -20,9 +20,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing wallet address" }, { status: 400 });
     }
 
-    const mintAddress = process.env.COUNCIL_TOKEN_MINT_ADDRESS || "";
+    // TOKEN GATING DISABLED - All connected wallets get access
+    // When ready to enable token gating:
+    // 1. Set COUNCIL_TOKEN_MINT_ADDRESS on Vercel
+    // 2. Change ENABLE_TOKEN_GATE to true
+    const ENABLE_TOKEN_GATE = false;
+    const mintAddress = process.env.COUNCIL_TOKEN_MINT_ADDRESS;
 
-    if (!mintAddress) {
+    if (!ENABLE_TOKEN_GATE || !mintAddress) {
       return NextResponse.json({ verified: true, balance: 0 });
     }
 
