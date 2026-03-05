@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = 'force-dynamic';
 
+export async function GET() {
+  const mintAddress = process.env.COUNCIL_TOKEN_MINT_ADDRESS || "";
+  return NextResponse.json({
+    status: 'ok',
+    hasMintConfigured: !!mintAddress,
+    wouldAutoVerify: !mintAddress,
+    timestamp: new Date().toISOString(),
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { walletAddress } = await req.json();
