@@ -138,7 +138,7 @@ export async function GET() {
     try {
       const client = new Anthropic({ apiKey });
       const testResponse = await client.messages.create({
-        model: 'claude-3-5-sonnet-latest',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 10,
         messages: [{ role: 'user', content: 'Say "ok"' }],
       });
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
         const systemPrompt = systemPrompts[entity.id] + '\n\n' + groupChatAddition;
 
         const result = await client.messages.create({
-          model: 'claude-3-5-sonnet-latest',
+          model: 'claude-3-5-sonnet-20241022',
           max_tokens: 200,
           system: systemPrompt,
           messages: [{ role: 'user' as const, content: context }],
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
     messages.push({ role: 'user', content: message.trim() });
 
     const response = await client.messages.create({
-      model: 'claude-3-5-sonnet-latest',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 300,
       system: systemPrompt,
       messages,
