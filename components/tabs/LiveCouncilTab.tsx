@@ -184,7 +184,7 @@ function DiscussionPanel() {
       if (!response.ok) throw new Error('Failed to fetch');
       const data = await response.json();
 
-      if (data.status === 'COMPLETE' && data.id && data.messages?.length > 0) {
+      if ((data.status === 'COMPLETE' || data.status === 'GENERATING') && data.id && data.messages?.length > 0) {
         let messages = data.messages;
         if (typeof messages === 'string') {
           try { messages = JSON.parse(messages); } catch { messages = []; }
