@@ -5,7 +5,8 @@ import { isTokenHolder } from '@/lib/solana';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
-const ENFORCE_CHAT_TOKEN_GATE = (process.env.COUNCIL_ENFORCE_CHAT_TOKEN_GATE || 'true') === 'true';
+// Token gating disabled until pump.fun launch - set to 'true' to enable
+const ENFORCE_CHAT_TOKEN_GATE = false;
 
 // Rate limiting (in-memory, resets on redeploy)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -137,7 +138,7 @@ export async function GET() {
     try {
       const client = new Anthropic({ apiKey });
       const testResponse = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-latest',
         max_tokens: 10,
         messages: [{ role: 'user', content: 'Say "ok"' }],
       });
@@ -221,7 +222,7 @@ export async function POST(request: NextRequest) {
         const systemPrompt = systemPrompts[entity.id] + '\n\n' + groupChatAddition;
 
         const result = await client.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-3-5-sonnet-latest',
           max_tokens: 200,
           system: systemPrompt,
           messages: [{ role: 'user' as const, content: context }],
@@ -273,7 +274,7 @@ export async function POST(request: NextRequest) {
     messages.push({ role: 'user', content: message.trim() });
 
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-sonnet-latest',
       max_tokens: 300,
       system: systemPrompt,
       messages,

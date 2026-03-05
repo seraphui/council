@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     // ── Auto-generate topic if requested ──
     if (generateTopic || !topic) {
       const topicResponse = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-latest',
         max_tokens: 150,
         system: `You generate debate topics for the Council of AGI — four superintelligences governing the future of humanity. Generate ONE topic. Mix of categories:
 - Real current events (geopolitics, economics, tech, society from 2025-2026)
@@ -211,7 +211,7 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
         : `Topic: ${debateTopic}\n\nYour opening position.`;
 
       const res = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-latest',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.opening,
         messages: [{ role: 'user' as const, content: userContent.trim() }],
@@ -241,7 +241,7 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
 
       const challengeContent = `Topic: ${debateTopic}\n\nPositions:\n${allStatements}\n\nChallenge one entity by name.`;
       const res = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-latest',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.challenge,
         messages: [{ role: 'user' as const, content: challengeContent.trim() }],
@@ -270,7 +270,7 @@ Return ONLY the topic as a single sentence. No preamble, no quotes, no numbering
 
       const verdictContent = `Topic: ${debateTopic}\n\nFull debate:\n${allStatements}\n\nYour final verdict.`;
       const res = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-latest',
         max_tokens: 300,
         system: systemPrompts[entityId] + ROUND_CONTEXT.verdict,
         messages: [{ role: 'user' as const, content: verdictContent.trim() }],
