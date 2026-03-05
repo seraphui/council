@@ -35,8 +35,8 @@ export default function Hero() {
           </p>
           
           <p className="leading-[1.9]">
-            They don't play politics.<br />
-            They don't give speeches.<br />
+            They don&apos;t play politics.<br />
+            They don&apos;t give speeches.<br />
             They just decide.
           </p>
           
@@ -49,7 +49,7 @@ export default function Hero() {
           </p>
           
           <p className="font-medium">
-            For the first time… you're at the table.
+            For the first time… you&apos;re at the table.
           </p>
         </div>
 

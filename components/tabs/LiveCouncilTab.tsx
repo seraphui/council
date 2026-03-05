@@ -230,18 +230,11 @@ function DiscussionPanel() {
     return () => clearTimeout(timer);
   }, [phase, visibleMessages, session]);
 
-  // Concluded: wait 2 minutes, archive, then fetch next session
+  // Concluded: wait 2 minutes, then look for the next available session
   useEffect(() => {
     if (phase !== 'concluded' || !session) return;
 
-    const timer = setTimeout(async () => {
-      if (session.id) {
-        await fetch('/api/council/session/archive', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId: session.id }),
-        }).catch(() => {});
-      }
+    const timer = setTimeout(() => {
       fetchSession();
     }, 120000); // 2 minutes
 

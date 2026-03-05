@@ -4,22 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: 'WT Solaire Display Light';
-  src: url('/fonts/WTSolaireDisplay-Light.woff2') format('woff2');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Roos Display';
-  src: url('/fonts/RoosDisplay-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
   --text: #1a1a1a;
   --text-mid: #333333;
@@ -41,7 +25,7 @@ html {
 }
 
 body {
-  font-family: 'Roos Display', Georgia, serif;
+  font-family: 'Playfair Display', Georgia, serif;
   color: var(--text);
   line-height: 1.6;
   background-color: transparent;
@@ -74,12 +58,12 @@ body {
 
 /* Typography Classes */
 .font-solaire {
-  font-family: 'WT Solaire Display Light', 'Playfair Display', Georgia, serif;
+  font-family: 'Playfair Display', Georgia, serif;
   font-weight: 300;
 }
 
 .font-roos {
-  font-family: 'Roos Display', Georgia, serif;
+  font-family: 'Playfair Display', Georgia, serif;
 }
 
 .font-ui {

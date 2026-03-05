@@ -2,6 +2,7 @@
 
 import { useWallet } from "@/contexts/WalletContext";
 import { ReactNode } from "react";
+import Image from "next/image";
 
 interface TokenGateProps {
   children: ReactNode;
@@ -9,7 +10,7 @@ interface TokenGateProps {
 }
 
 export function TokenGate({ children, feature }: TokenGateProps) {
-  const { connected, verified, verifying, connectWallet, connecting } = useWallet();
+  const { connected, verified, verifying, connectWallet, connecting, error } = useWallet();
 
   if (connected && verified) return <>{children}</>;
 
@@ -26,9 +27,11 @@ export function TokenGate({ children, feature }: TokenGateProps) {
   return (
     <div className="flex items-center justify-center py-20">
       <div className="text-center max-w-[480px] space-y-6">
-        <img 
-          src="/images/council-icon.png" 
-          alt="Council" 
+        <Image
+          src="/images/council-icon.png"
+          alt="Council"
+          width={64}
+          height={64}
           className="w-16 h-16 mx-auto opacity-50"
         />
         <h2 className="font-solaire text-[24px] text-[#2a2a2a]">Council Access Required</h2>
@@ -59,6 +62,9 @@ export function TokenGate({ children, feature }: TokenGateProps) {
         <p className="font-mono text-[11px] text-[#aaa] italic">
           Read-only verification. No transactions are signed.
         </p>
+        {error && (
+          <p className="font-mono text-[11px] text-[#c0392b]">{error}</p>
+        )}
       </div>
     </div>
   );

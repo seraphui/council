@@ -52,7 +52,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ walletAddress: address }),
       });
 
-      if (!res.ok) throw new Error("Verification request failed");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Verification request failed");
+      }
 
       const data = await res.json();
 
@@ -64,11 +67,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }));
     } catch (err) {
       console.error("Verification failed:", err);
+      const message = err instanceof Error ? err.message : "Could not verify token holdings";
       setState(prev => ({
         ...prev,
         verified: false,
         verifying: false,
-        error: "Could not verify token holdings",
+        error: message,
       }));
     }
   }, []);

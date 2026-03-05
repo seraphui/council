@@ -1,11 +1,9 @@
 """FastAPI backend for Council of AGI."""
 
-import os
 from dotenv import load_dotenv
 
 # Load .env before any other imports that use env vars
 load_dotenv()
-print(f"[DEBUG] .env loaded, ANTHROPIC_API_KEY present: {bool(os.getenv('ANTHROPIC_API_KEY'))}")
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware

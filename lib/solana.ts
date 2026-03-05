@@ -9,9 +9,10 @@ const connection = new Connection(RPC_URL);
 export async function isTokenHolder(walletAddress: string): Promise<{
   verified: boolean;
   balance: number;
+  reason?: string;
 }> {
   if (!TOKEN_MINT_ADDRESS) {
-    return { verified: true, balance: 0 };
+    return { verified: false, balance: 0, reason: "TOKEN_MINT_NOT_CONFIGURED" };
   }
 
   try {
@@ -33,6 +34,6 @@ export async function isTokenHolder(walletAddress: string): Promise<{
     };
   } catch (error) {
     console.error("Token verification failed:", error);
-    return { verified: false, balance: 0 };
+    return { verified: false, balance: 0, reason: "TOKEN_VERIFICATION_FAILED" };
   }
 }

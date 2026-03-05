@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { castVote, getAllVotes, getUserVotes } from '@/lib/votes';
+import { castVote, getAllVotes } from '@/lib/votes';
 import { useRealtimeVotes } from '@/hooks/useRealtimeVotes';
+import { useWallet } from '@/contexts/WalletContext';
 
 export const dynamic = 'force-dynamic';
 
@@ -248,36 +249,28 @@ interface AllVoteData {
 // ============================================================================
 
 export default function DecisionsPage() {
+  const { connected, publicKey, verified, tokenBalance, connectWallet } = useWallet();
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [votes, setVotes] = useState<AllVoteData>({});
   const [userVotes, setUserVotes] = useState<{ [proposalId: string]: number }>({});
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [votingPower, setVotingPower] = useState<number>(0);
   const [showModal, setShowModal] = useState(false);
   const [modalProposalId, setModalProposalId] = useState<string | null>(null);
+  const walletConnected = connected;
+  const walletAddress = publicKey;
+  const votingPower = tokenBalance;
 
   const loadVotes = useCallback(async () => {
     try {
-      const allVotes = await getAllVotes();
-      const newVoteData: AllVoteData = {};
+      const { votes: allVotes, userVotes: serverUserVotes } = await getAllVotes(walletAddress || undefined);
 
-      for (const [proposalId, data] of Object.entries(allVotes)) {
-        newVoteData[proposalId] = {
-          counts: data.counts,
-          totalVoters: data.totalVoters,
-          userVote: userVotes[proposalId] ?? null,
-          closed: votes[proposalId]?.closed ?? false,
-          closedAt: votes[proposalId]?.closedAt,
-          winningOption: votes[proposalId]?.winningOption,
-        };
-      }
-
+      setUserVotes(serverUserVotes || {});
       setVotes(prev => {
         const merged: AllVoteData = { ...prev };
-        for (const [proposalId, data] of Object.entries(newVoteData)) {
+        for (const [proposalId, data] of Object.entries(allVotes)) {
           merged[proposalId] = {
-            ...data,
+            counts: data.counts,
+            totalVoters: data.totalVoters,
+            userVote: (serverUserVotes || {})[proposalId] ?? null,
             closed: prev[proposalId]?.closed ?? false,
             closedAt: prev[proposalId]?.closedAt,
             winningOption: prev[proposalId]?.winningOption,
@@ -288,22 +281,9 @@ export default function DecisionsPage() {
     } catch (err) {
       console.error('Failed to load votes:', err);
     }
-  }, [userVotes, votes]);
-
-  // Load user's votes when wallet connects
-  useEffect(() => {
-    async function loadUserVotes() {
-      if (walletAddress) {
-        const votes = await getUserVotes(walletAddress);
-        setUserVotes(votes);
-      } else {
-        setUserVotes({});
-      }
-    }
-    loadUserVotes();
   }, [walletAddress]);
 
-  // Load all votes on mount and when user votes change
+  // Load votes on mount and whenever wallet changes
   useEffect(() => {
     loadVotes();
   }, [loadVotes]);
@@ -364,32 +344,14 @@ export default function DecisionsPage() {
     }
   }, [currentTime, votes]);
 
-  const connectWallet = useCallback(async () => {
-    try {
-      // @ts-expect-error Phantom wallet global
-      const { solana } = window;
-      if (solana?.isPhantom) {
-        const response = await solana.connect();
-        setWalletAddress(response.publicKey.toString());
-        setWalletConnected(true);
-        // LARP: Generate random voting power
-        setVotingPower(Math.floor(Math.random() * 50000000) / 1000);
-      } else {
-        window.open('https://phantom.app/', '_blank');
-      }
-    } catch (error) {
-      console.error('Wallet connection failed:', error);
-    }
-  }, []);
-
   const handleVote = useCallback(async (proposalId: string, optionIndex: number) => {
-    if (!walletConnected || votingPower === 0 || !walletAddress) return;
+    if (!walletConnected || !verified || votingPower === 0 || !walletAddress) return;
     
     const existing = votes[proposalId];
     if (existing?.closed) return;
 
     try {
-      await castVote(proposalId, optionIndex, walletAddress, votingPower);
+      await castVote(proposalId, optionIndex, walletAddress);
       
       setUserVotes(prev => ({ ...prev, [proposalId]: optionIndex }));
       await loadVotes();
@@ -400,7 +362,7 @@ export default function DecisionsPage() {
     } catch (err) {
       console.error('Failed to cast vote:', err);
     }
-  }, [walletConnected, votingPower, walletAddress, votes, loadVotes]);
+  }, [walletConnected, verified, votingPower, walletAddress, votes, loadVotes]);
 
   // Calculate active proposals
   const elapsedMs = currentTime - GLOBAL_START_TIME;
@@ -446,9 +408,9 @@ export default function DecisionsPage() {
                 <p className="font-mono text-[11px] text-[#666]">
                   {walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}
                 </p>
-                {votingPower > 0 ? (
+                {verified && votingPower > 0 ? (
                   <p className="font-mono text-[13px] text-[#1a1a1a]">
-                    Your voting power: <span className="font-semibold">{votingPower.toFixed(2)}M $COUNCIL</span>
+                    Your voting power: <span className="font-semibold">{votingPower.toLocaleString(undefined, { maximumFractionDigits: 4 })} $COUNCIL</span>
                   </p>
                 ) : (
                   <p className="font-mono text-[12px] text-red-600">
@@ -531,13 +493,13 @@ export default function DecisionsPage() {
                           <button
                             key={optionIndex}
                             onClick={() => handleVote(proposal.id, optionIndex)}
-                            disabled={!walletConnected || votingPower === 0}
+                            disabled={!walletConnected || !verified || votingPower === 0}
                             className={`w-full text-left relative overflow-hidden border transition-all ${
                               isSelected
                                 ? 'border-[#1a1a1a] bg-[rgba(0,0,0,0.03)]'
                                 : 'border-[rgba(0,0,0,0.1)] hover:border-[rgba(0,0,0,0.2)]'
                             } ${isBlurred ? 'opacity-50' : ''} ${
-                              !walletConnected || votingPower === 0 ? 'cursor-not-allowed opacity-70' : ''
+                              !walletConnected || !verified || votingPower === 0 ? 'cursor-not-allowed opacity-70' : ''
                             }`}
                           >
                             <div

@@ -1,8 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
+import { PublicKey } from '@solana/web3.js';
+import { isTokenHolder } from '@/lib/solana';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
+const ENFORCE_CHAT_TOKEN_GATE = (process.env.COUNCIL_ENFORCE_CHAT_TOKEN_GATE || 'true') === 'true';
 
 // Rate limiting (in-memory, resets on redeploy)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -164,6 +167,31 @@ export async function POST(request: NextRequest) {
     const message = body.message;
     const history = body.conversationHistory || body.history || [];
     const isGroupChat = body.isGroupChat || false;
+    const walletAddress = body.walletAddress;
+
+    if (ENFORCE_CHAT_TOKEN_GATE) {
+      if (!walletAddress || typeof walletAddress !== 'string') {
+        return NextResponse.json({ error: 'Wallet verification required' }, { status: 401 });
+      }
+
+      try {
+        new PublicKey(walletAddress);
+      } catch {
+        return NextResponse.json({ error: 'Invalid wallet address' }, { status: 400 });
+      }
+
+      const verification = await isTokenHolder(walletAddress);
+      if (verification.reason === 'TOKEN_MINT_NOT_CONFIGURED') {
+        return NextResponse.json(
+          { error: 'Council chat is unavailable: token mint is not configured on the server' },
+          { status: 500 }
+        );
+      }
+
+      if (!verification.verified) {
+        return NextResponse.json({ error: 'Wallet is not eligible for Council chat' }, { status: 403 });
+      }
+    }
 
     if (!message) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 });

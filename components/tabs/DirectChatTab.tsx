@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { entities } from '@/lib/entities';
 import { EntityIcon, HumanSilhouette } from '../Icons';
+import { useWallet } from '@/contexts/WalletContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -15,6 +16,7 @@ interface ConversationHistory {
 }
 
 export default function DirectChatTab() {
+  const { publicKey } = useWallet();
   const [selectedEntity, setSelectedEntity] = useState(entities[0]);
   const [conversations, setConversations] = useState<ConversationHistory>({});
   const [input, setInput] = useState('');
@@ -22,7 +24,10 @@ export default function DirectChatTab() {
   const [isOffline, setIsOffline] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const currentMessages = conversations[selectedEntity.id] || [];
+  const currentMessages = useMemo(
+    () => conversations[selectedEntity.id] || [],
+    [conversations, selectedEntity.id]
+  );
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -55,7 +60,6 @@ export default function DirectChatTab() {
         content: m.content
       }));
 
-      console.log('Sending request to:', '/api/chat');
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,14 +67,13 @@ export default function DirectChatTab() {
           entityId: selectedEntity.fullName,
           message: userMessage.content,
           conversationHistory: history,
+          walletAddress: publicKey,
         }),
       });
 
-      console.log('API Response status:', response.status, response.ok);
       if (!response.ok) throw new Error('Failed to get response');
 
       const data = await response.json();
-      console.log('API Response data:', data);
       
       const assistantMessage: Message = {
         role: 'assistant',

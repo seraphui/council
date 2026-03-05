@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { entities } from '@/lib/entities';
 import { EntityIcon, HumanSilhouette } from '../Icons';
+import { useWallet } from '@/contexts/WalletContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -12,6 +13,7 @@ interface Message {
 }
 
 export default function GroupChatTab() {
+  const { publicKey } = useWallet();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +52,7 @@ export default function GroupChatTab() {
         body: JSON.stringify({
           message: userMessage.content,
           isGroupChat: true,
+          walletAddress: publicKey,
         }),
       });
 

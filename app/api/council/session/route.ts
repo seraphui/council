@@ -1,16 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
 
 const ADMIN_SECRET = process.env.COUNCIL_ADMIN_SECRET || '';
 
@@ -95,54 +88,70 @@ const ROUND_CONTEXT = {
 // GET: Fetch the latest non-archived session for viewers
 // ════════════════════════════════════
 export async function GET(request: NextRequest) {
-  const supabase = getSupabase();
-  const excludeId = request.nextUrl.searchParams.get('exclude');
+  try {
+    const supabase = getSupabaseServer();
+    const excludeId = request.nextUrl.searchParams.get('exclude');
 
-  let query = supabase
-    .from('council_sessions')
-    .select('*')
-    .is('archived_at', null)
-    .order('created_at', { ascending: false })
-    .limit(1);
+    let query = supabase
+      .from('council_sessions')
+      .select('*')
+      .is('archived_at', null)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-  if (excludeId) {
-    query = query.neq('id', excludeId);
-  }
+    if (excludeId) {
+      query = query.neq('id', excludeId);
+    }
 
-  const { data, error } = await query;
+    const { data, error } = await query;
 
-  if (error || !data || data.length === 0) {
+    if (error || !data || data.length === 0) {
+      return NextResponse.json({
+        status: 'idle',
+        topic: null,
+        messages: [],
+        id: null,
+      });
+    }
+
+    const session = data[0];
+    let messages = session.messages;
+    if (typeof messages === 'string') {
+      try { messages = JSON.parse(messages); } catch { messages = []; }
+    }
+
     return NextResponse.json({
-      status: 'idle',
-      topic: null,
-      messages: [],
-      id: null,
+      status: session.status,
+      topic: session.topic,
+      messages: messages || [],
+      created_at: session.created_at,
+      id: session.id,
     });
+  } catch (error) {
+    console.error('Council session GET error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch session';
+    return NextResponse.json(
+      { error: message, status: 'idle', topic: null, messages: [], id: null },
+      { status: 500 }
+    );
   }
-
-  const session = data[0];
-  let messages = session.messages;
-  if (typeof messages === 'string') {
-    try { messages = JSON.parse(messages); } catch { messages = []; }
-  }
-
-  return NextResponse.json({
-    status: session.status,
-    topic: session.topic,
-    messages: messages || [],
-    created_at: session.created_at,
-    id: session.id,
-  });
 }
 
 // ════════════════════════════════════
 // POST: Admin triggers a new debate
 // ════════════════════════════════════
 export async function POST(request: NextRequest) {
-  const supabase = getSupabase();
   try {
+    const supabase = getSupabaseServer();
     const body = await request.json();
     const { topic, adminSecret, generateTopic } = body;
+
+    if (!ADMIN_SECRET) {
+      return NextResponse.json(
+        { error: 'Council admin secret is not configured on the server' },
+        { status: 500 }
+      );
+    }
 
     // Auth check
     if (adminSecret !== ADMIN_SECRET) {
@@ -156,6 +165,12 @@ export async function POST(request: NextRequest) {
 
     const client = new Anthropic({ apiKey });
     let debateTopic = topic;
+
+    // Archive any previous live session before creating a new one.
+    await supabase
+      .from('council_sessions')
+      .update({ archived_at: new Date().toISOString() })
+      .is('archived_at', null);
 
     // ── Auto-generate topic if requested ──
     if (generateTopic || !topic) {

@@ -18,6 +18,12 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await isTokenHolder(walletAddress);
+    if (result.reason === "TOKEN_MINT_NOT_CONFIGURED") {
+      return NextResponse.json(
+        { error: "Council token mint is not configured on the server" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(result);
   } catch (error) {
