@@ -185,7 +185,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Auth check
     if (adminSecret !== ADMIN_SECRET) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -197,13 +196,11 @@ export async function POST(request: NextRequest) {
 
     let debateTopic = topic;
 
-    // Archive any previous live session before creating a new one.
     await supabase
       .from('council_sessions')
       .update({ archived_at: new Date().toISOString() })
       .is('archived_at', null);
 
-    // ── Auto-generate topic if requested ──
     if (generateTopic || !topic) {
       const topicText = await callMistral(
         'Generate ONE debate topic for the Council of AGI — four superintelligences governing humanity. Topics should be grounded in real 2025-2026 events OR plausible near-future scenarios. Return ONLY the topic as one sentence. No preamble, no quotes, no numbering.',
@@ -213,7 +210,6 @@ export async function POST(request: NextRequest) {
       debateTopic = topicText.trim() || 'The future of autonomous governance systems';
     }
 
-    // ── Create session record (status: GENERATING) ──
     const { data: session, error: insertError } = await supabase
       .from('council_sessions')
       .insert({ topic: debateTopic, status: 'GENERATING', messages: [] })
@@ -224,7 +220,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
     }
 
-    // ── Generate the 8-message debate ──
     const debateMessages: Array<{ entity: string; entityId: string; content: string; round: number }> = [];
 
     // Round 1: Opening positions (4 messages)
@@ -303,7 +298,6 @@ export async function POST(request: NextRequest) {
         .eq('id', session.id);
     }
 
-    // ── Mark session complete with archive fields ──
     const { count } = await supabase
       .from('council_sessions')
       .select('*', { count: 'exact', head: true })

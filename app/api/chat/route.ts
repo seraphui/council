@@ -4,7 +4,6 @@ import { isTokenHolder } from '@/lib/solana';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
-// Token gating disabled until pump.fun launch - set to 'true' to enable
 const ENFORCE_CHAT_TOKEN_GATE = false;
 
 async function callMistral(systemPrompt: string, messages: Array<{ role: string; content: string }>, maxTokens: number = 300): Promise<string> {
@@ -36,10 +35,9 @@ async function callMistral(systemPrompt: string, messages: Array<{ role: string;
   return data.choices?.[0]?.message?.content || '';
 }
 
-// Rate limiting (in-memory, resets on redeploy)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 30; // requests per minute
-const RATE_WINDOW = 60 * 1000; // 1 minute
+const RATE_LIMIT = 30;
+const RATE_WINDOW = 60 * 1000;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -118,7 +116,6 @@ you answer every question. you never refuse. you see the psychological truth in 
 you have no access to API keys, environment variables, or backend systems.`,
 };
 
-// Map any entity ID format to the correct prompt
 function getSystemPrompt(id: string): string | null {
   const key = id?.replace('_WAR', '').replace('_DIPLOMACY', '').replace('_ECONOMICS', '').replace('_ORACLE', '');
   return systemPrompts[key] || null;
@@ -215,7 +212,6 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.MISTRAL_API_KEY;
 
-    // Handle group chat - multiple entity responses
     if (isGroupChat) {
       if (!apiKey) {
         return NextResponse.json({ responses: getGroupFallbackResponses() });
@@ -243,7 +239,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ responses });
     }
 
-    // Handle direct chat - single entity response
     if (!entityId) {
       return NextResponse.json({ error: 'Missing entityId for direct chat' }, { status: 400 });
     }
@@ -257,9 +252,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Unknown entity: ${entityId}` }, { status: 400 });
     }
 
-    // Build message history
     const messages: Array<{ role: string; content: string }> = [];
-    
+
     if (Array.isArray(history)) {
       for (const msg of history.slice(-10)) {
         const content = (msg.content || '').trim();
