@@ -43,7 +43,7 @@ export function JoinCouncilButton() {
   );
 }
 
-function JoinCouncilModal({ onClose }: { onClose: () => void }) {
+export function JoinCouncilModal({ onClose }: { onClose: () => void }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {

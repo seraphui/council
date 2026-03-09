@@ -34,9 +34,10 @@ export async function POST(request: Request) {
   }
 
   const field = vote === 'FOR' ? 'votes_for' : 'votes_against';
+  const currentVotes = (proposal as { votes_for: number; votes_against: number })[field];
   await supabase
     .from('treasury_proposals')
-    .update({ [field]: (proposal as any)[field] + 1 })
+    .update({ [field]: currentVotes + 1 })
     .eq('id', proposal_id);
 
   return NextResponse.json({ success: true, vote });

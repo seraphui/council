@@ -45,14 +45,14 @@ export async function POST(request: Request) {
     status: 'ACTIVE',
     next_deadline: nextDeadline.toISOString(),
     notifications: [
-      ...(liveAuctions || []).map((a: any) => ({
+      ...(liveAuctions || []).map((a: { id: string; seat_number: number; closes_at: string; highest_bid_sol: number }) => ({
         type: 'AUCTION_LIVE',
         auction_id: a.id,
         seat_number: a.seat_number,
         closes_at: a.closes_at,
         highest_bid_sol: a.highest_bid_sol,
       })),
-      ...(activeProposals || []).map((p: any) => ({
+      ...(activeProposals || []).map((p: { id: string; title: string; voting_deadline: string }) => ({
         type: 'PROPOSAL_ACTIVE',
         proposal_id: p.id,
         title: p.title,

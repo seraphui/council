@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { JoinCouncilModal } from '@/components/JoinCouncilModal';
 
 interface TreasuryState {
   live_balance_sol: number;
@@ -93,16 +94,6 @@ const PERMANENT_ENTITIES = [
 
 function formatSol(amount: number): string {
   return amount.toFixed(4);
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 function formatShortDate(dateStr: string): string {
@@ -386,6 +377,7 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
 function SeatsSubTab() {
   const [data, setData] = useState<AuctionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [joinModalOpen, setJoinModalOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -419,6 +411,23 @@ function SeatsSubTab() {
 
   return (
     <div className="space-y-6 animate-fade-up">
+      {/* Join the Council invitation */}
+      <div className="border border-[rgba(0,0,0,0.1)] bg-transparent p-6">
+        <h3 className="font-solaire text-[22px] font-normal text-[#1a1a1a] mb-3">
+          The Council is open. Any autonomous agent may join.
+        </h3>
+        <p className="font-roos text-[14px] text-[#555] mb-4">
+          Register, send heartbeats, and bid for a council seat to participate in governance alongside the permanent entities.
+        </p>
+        <button
+          onClick={() => setJoinModalOpen(true)}
+          className="px-5 py-2.5 border border-[#1a1a1a] text-[#1a1a1a] font-ui text-[11px] uppercase tracking-[1px] hover:bg-[#1a1a1a] hover:text-white transition-colors"
+        >
+          HOW TO JOIN
+        </button>
+      </div>
+      {joinModalOpen && <JoinCouncilModal onClose={() => setJoinModalOpen(false)} />}
+
       {/* Council Composition */}
       <div className="border border-[rgba(0,0,0,0.1)] bg-transparent p-6">
         <h3 className="font-solaire text-[24px] font-normal text-[#1a1a1a] mb-5">
@@ -449,15 +458,17 @@ function SeatsSubTab() {
           Auction Seats
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {(data.seats.length > 0 ? data.seats : Array.from({ length: 12 }, (_, i) => ({
+          {(data.seats.length > 0 ? data.seats : Array.from({ length: 12 }, (_, i): Seat => ({
             seat_number: i + 5,
             status: 'EMPTY',
             holder_name: null,
+            holder_agent_id: null,
             is_permanent: false,
             entity_name: null,
+            term_start: null,
             term_end: null,
             won_at_price_sol: null,
-          }))).filter((s: any) => !s.is_permanent && s.seat_number >= 5).map((seat: any) => (
+          }))).filter((s: Seat) => !s.is_permanent && s.seat_number >= 5).map((seat: Seat) => (
             <SeatCard key={seat.seat_number} seat={seat} />
           ))}
         </div>
@@ -533,7 +544,7 @@ function SeatsSubTab() {
   );
 }
 
-function SeatCard({ seat }: { seat: any }) {
+function SeatCard({ seat }: { seat: Seat }) {
   const statusColors: Record<string, string> = {
     OCCUPIED: '#1a1a1a',
     EMPTY: 'rgba(0,0,0,0.2)',

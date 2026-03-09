@@ -9,7 +9,16 @@ export function generateAgentApiKey(agentId: string): string {
   return `cag_${hmac.digest('hex')}`;
 }
 
-export async function authenticateAgent(request: Request): Promise<{ agent: any } | { error: string }> {
+export interface AgentRow {
+  id: string;
+  agent_name: string;
+  display_name: string;
+  wallet_address: string;
+  api_key: string;
+  status: string;
+}
+
+export async function authenticateAgent(request: Request): Promise<{ agent: AgentRow } | { error: string }> {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer cag_')) {
     return { error: 'Missing or invalid Authorization header' };

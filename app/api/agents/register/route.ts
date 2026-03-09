@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     const agentId = crypto.randomUUID();
     const apiKey = generateAgentApiKey(agentId);
 
-    const { data: agent, error } = await supabase
+    const { error } = await supabase
       .from('ai_agents')
       .insert({
         id: agentId,
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       status: 'ACTIVE',
       message: 'Registration successful. Save your api_key — it cannot be recovered.',
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Registration error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
