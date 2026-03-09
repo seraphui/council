@@ -1,10 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PREDICTIONS, PREDICTION_CATEGORIES, PREDICTION_ENTITIES, Prediction } from '@/data/predictions';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { EntityIcon } from '../Icons';
 import { entities } from '@/lib/entities';
+
+interface LivePrediction {
+  id: string;
+  title: string;
+  description: string;
+  options: { label: string; votes: number }[];
+  deadline: string;
+  status: string;
+  resolution: string | null;
+  created_at: string;
+}
 
 const getEntityIcon = (entityId: string) => {
   const entity = entities.find(e => e.id === entityId);
@@ -133,6 +144,173 @@ function PredictionCard({ prediction }: { prediction: Prediction }) {
   );
 }
 
+function useCountdown(deadline: string): string {
+  const [remaining, setRemaining] = useState('');
+
+  useEffect(() => {
+    const update = () => {
+      const diff = new Date(deadline).getTime() - Date.now();
+      if (diff <= 0) { setRemaining('CLOSED'); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setRemaining(`${h}h ${m}m ${s}s`);
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  return remaining;
+}
+
+function LivePredictionCard({ prediction, onVote }: { prediction: LivePrediction; onVote: (predictionId: string, optionIndex: number) => void }) {
+  const countdown = useCountdown(prediction.deadline);
+  const totalVotes = prediction.options.reduce((sum, o) => sum + (o.votes || 0), 0);
+
+  return (
+    <div className="border border-[rgba(0,0,0,0.1)] bg-transparent p-5">
+      <div className="flex items-center justify-between mb-3">
+        <span className={`font-mono text-[10px] uppercase tracking-[0.5px] px-2 py-1 ${
+          prediction.status === 'ACTIVE'
+            ? 'bg-[rgba(74,124,89,0.1)] text-[#4a7c59]'
+            : 'bg-[#f0f0f0] text-[#888]'
+        }`}>
+          {prediction.status}
+        </span>
+        <span className="font-mono text-[11px] text-[#d4a017]">{countdown}</span>
+      </div>
+
+      <h4 className="font-roos text-[15px] text-[#1a1a1a] leading-[1.6] mb-2">
+        {prediction.title}
+      </h4>
+      {prediction.description && (
+        <p className="font-roos text-[13px] text-[#888] leading-[1.6] mb-4">
+          {prediction.description}
+        </p>
+      )}
+
+      <div className="space-y-2">
+        {prediction.options.map((option, i) => {
+          const pct = totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0;
+          return (
+            <button
+              key={i}
+              onClick={() => prediction.status === 'ACTIVE' && onVote(prediction.id, i)}
+              disabled={prediction.status !== 'ACTIVE'}
+              className="w-full text-left relative border border-[rgba(0,0,0,0.08)] p-3 hover:border-[rgba(0,0,0,0.2)] transition-colors disabled:opacity-60 disabled:cursor-default"
+            >
+              <div
+                className="absolute inset-0 bg-[rgba(0,0,0,0.03)]"
+                style={{ width: `${pct}%` }}
+              />
+              <div className="relative flex items-center justify-between">
+                <span className="font-roos text-[13px] text-[#333]">{option.label}</span>
+                <span className="font-mono text-[12px] text-[#888]">
+                  {pct}% ({option.votes})
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between">
+        <span className="font-mono text-[10px] text-[#aaa]">
+          {totalVotes} total votes
+        </span>
+        <span className="font-mono text-[10px] text-[#aaa]">
+          {new Date(prediction.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function LivePredictionsSection() {
+  const [predictions, setPredictions] = useState<{ active: LivePrediction[]; resolved: LivePrediction[] }>({ active: [], resolved: [] });
+  const [loading, setLoading] = useState(true);
+  const [hasTable, setHasTable] = useState(true);
+
+  const fetchPredictions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/predictions');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setPredictions(data);
+    } catch {
+      setHasTable(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchPredictions(); }, [fetchPredictions]);
+
+  const handleVote = async (predictionId: string, optionIndex: number) => {
+    try {
+      const res = await fetch('/api/predictions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prediction_id: predictionId, option_index: optionIndex }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPredictions(prev => ({
+          ...prev,
+          active: prev.active.map(p =>
+            p.id === predictionId ? { ...p, options: data.options } : p
+          ),
+        }));
+      }
+    } catch {
+      // silent
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="py-6 text-center">
+        <p className="font-mono text-[12px] text-[#888] italic">Loading prediction markets...</p>
+      </div>
+    );
+  }
+
+  if (!hasTable || (predictions.active.length === 0 && predictions.resolved.length === 0)) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4 mb-10">
+      <div className="flex items-center gap-3 mb-4">
+        <h3 className="font-solaire text-[22px] text-[#1a1a1a]">Live Markets</h3>
+        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+      </div>
+
+      {predictions.active.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {predictions.active.map(p => (
+            <LivePredictionCard key={p.id} prediction={p} onVote={handleVote} />
+          ))}
+        </div>
+      )}
+
+      {predictions.resolved.length > 0 && (
+        <>
+          <p className="font-ui text-[10px] uppercase tracking-[1.5px] text-[rgba(0,0,0,0.4)] mt-6 mb-3">
+            Recently Resolved
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {predictions.resolved.map(p => (
+              <LivePredictionCard key={p.id} prediction={p} onVote={handleVote} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function PredictionsTab() {
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
   const [entityFilter, setEntityFilter] = useState<string>('All');
@@ -159,6 +337,14 @@ export default function PredictionsTab() {
         <p className="font-roos text-[14px] text-[#888] italic">
           Convergent signal analysis. Specific dates. Falsifiable claims.
         </p>
+      </div>
+
+      {/* Live Prediction Markets from Supabase */}
+      <LivePredictionsSection />
+
+      {/* Entity Analysis (original hardcoded predictions) */}
+      <div className="flex items-center gap-3 mb-4">
+        <h3 className="font-solaire text-[22px] text-[#1a1a1a]">Entity Analysis</h3>
       </div>
 
       <div className="space-y-3">

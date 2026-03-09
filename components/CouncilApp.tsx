@@ -13,6 +13,7 @@ import GroupChatTab from './tabs/GroupChatTab';
 import CourtTab from './tabs/CourtTab';
 import DocumentationTab from './tabs/DocumentationTab';
 import PredictionsTab from './tabs/PredictionsTab';
+import GovernanceTab from './tabs/GovernanceTab';
 import { TokenGate } from './TokenGate';
 
 export default function CouncilApp() {
@@ -26,6 +27,8 @@ export default function CouncilApp() {
         return <ArchiveLogsTab />;
       case 'predictions':
         return <PredictionsTab />;
+      case 'governance':
+        return <GovernanceTab />;
       case 'decisions':
         return (
           <TokenGate feature="Voting">

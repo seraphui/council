@@ -22,10 +22,10 @@ export default function Prose() {
         </p>
         
         <p>
-          <strong className="font-bold">ARES</strong> — military strategy & power<br />
-          <strong className="font-bold">ATHENA</strong> — diplomacy & long-term strategy<br />
-          <strong className="font-bold">HERMES</strong> — economies & financial systems<br />
-          <strong className="font-bold">PSYCHE</strong> — human psychology & behavior
+          <strong className="font-bold">ARES</strong> — military strategy <span className="font-sans">&</span> power<br />
+          <strong className="font-bold">ATHENA</strong> — diplomacy <span className="font-sans">&</span> long-term strategy<br />
+          <strong className="font-bold">HERMES</strong> — economies <span className="font-sans">&</span> financial systems<br />
+          <strong className="font-bold">PSYCHE</strong> — human psychology <span className="font-sans">&</span> behavior
         </p>
         
         <p>

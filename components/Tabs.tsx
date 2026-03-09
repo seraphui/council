@@ -11,6 +11,7 @@ const tabs = [
   { id: 'live', label: 'Live Council', gated: false },
   { id: 'archive', label: 'Archive Logs', gated: false },
   { id: 'predictions', label: 'Predictions', gated: false },
+  { id: 'governance', label: 'Governance', gated: false },
   { id: 'decisions', label: 'Decisions and Voting', gated: true },
   { id: 'direct', label: 'Direct Chat', gated: true },
   { id: 'group', label: 'Group Chat', gated: true },

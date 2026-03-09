@@ -15,7 +15,9 @@ export default function Hero() {
         </div>
 
         {/* AI Logos with Animated Beams */}
-        <HeroDiagram />
+        <div className="relative">
+          <HeroDiagram />
+        </div>
 
         {/* Divider */}
         <div className="w-full h-px bg-[rgba(0,0,0,0.08)] mb-8"></div>
@@ -41,7 +43,7 @@ export default function Hero() {
           </p>
           
           <p>
-            <strong>ARES</strong> for military strategy & power, <strong>ATHENA</strong> for diplomacy & long-term strategy, <strong>HERMES</strong> for economies & financial systems, and <strong>PSYCHE</strong> for human psychology & behavior.
+            <strong>ARES</strong> for military strategy <span className="font-sans">&</span> power, <strong>ATHENA</strong> for diplomacy <span className="font-sans">&</span> long-term strategy, <strong>HERMES</strong> for economies <span className="font-sans">&</span> financial systems, and <strong>PSYCHE</strong> for human psychology <span className="font-sans">&</span> behavior.
           </p>
           
           <p>

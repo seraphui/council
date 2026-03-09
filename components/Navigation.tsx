@@ -1,7 +1,7 @@
 'use client';
 
 import { CouncilLogo } from './Icons';
-import { WalletButton } from './WalletButton';
+import { JoinCouncilButton } from './JoinCouncilModal';
 import { useWallet } from '@/contexts/WalletContext';
 
 interface NavigationProps {
@@ -50,8 +50,8 @@ export default function Navigation({ onTabChange }: NavigationProps) {
             Predictions
           </a>
         </div>
-        
-        <WalletButton />
+
+        <JoinCouncilButton />
       </div>
     </nav>
   );
