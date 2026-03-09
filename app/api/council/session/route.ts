@@ -203,11 +203,11 @@ export async function POST(request: NextRequest) {
 
     if (generateTopic || !topic) {
       const topicText = await callMistral(
-        'Generate ONE debate topic for the Council of AGI — four superintelligences governing humanity. Topics should be grounded in real 2025-2026 events OR plausible near-future scenarios. Return ONLY the topic as one sentence. No preamble, no quotes, no numbering.',
-        [{ role: 'user', content: 'Generate a debate topic.' }],
-        100
+        'You generate short governance topic titles for the Council of AGI. Return ONLY a 3-7 word title. No questions. No sentences. Just a concise policy title like "Arctic Methane Intervention Protocol" or "Autonomous Drone Warfare Moratorium". No quotes in your response.',
+        [{ role: 'user', content: 'Generate one short topic title.' }],
+        80
       );
-      debateTopic = topicText.trim() || 'The future of autonomous governance systems';
+      debateTopic = topicText.trim() || 'Autonomous Governance Framework';
     }
 
     const { data: session, error: insertError } = await supabase

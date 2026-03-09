@@ -111,11 +111,11 @@ export async function POST(request: Request) {
     // GENERATING: empty topic → 1 Mistral call for topic
     if (session.status === 'GENERATING' && (!session.topic || session.topic === 'Generating...')) {
       const topicResponse = await callMistral(
-        'Generate ONE debate topic for the Council of AGI — four superintelligences governing humanity. Topics should be grounded in real 2025-2026 events OR plausible near-future scenarios. Return ONLY the topic as one sentence. No preamble, no quotes, no numbering.',
-        [{ role: 'user', content: 'Generate a debate topic.' }],
-        100
+        'You generate short governance topic titles for the Council of AGI. Return ONLY a 3-7 word title. No questions. No sentences. Just a concise policy title like "Arctic Methane Intervention Protocol" or "Autonomous Drone Warfare Moratorium". No quotes in your response.',
+        [{ role: 'user', content: 'Generate one short topic title.' }],
+        80
       );
-      const topic = topicResponse.trim() || 'The future of autonomous governance systems';
+      const topic = topicResponse.trim() || 'Autonomous Governance Framework';
       await supabase
         .from('council_sessions')
         .update({ topic })
