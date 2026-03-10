@@ -108,12 +108,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, actions, timestamp: now.toISOString() });
     }
 
-    // GENERATING: empty topic → 1 Mistral call for topic
+    // GENERATING: empty topic → 1 Mistral call for topic (avoid repeating recent topics)
     if (session.status === 'GENERATING' && (!session.topic || session.topic === 'Generating...')) {
+      const { data: recentSessions } = await supabase
+        .from('council_sessions')
+        .select('topic')
+        .not('topic', 'is', null)
+        .neq('topic', 'Generating...')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      const recentTopics = [...new Set((recentSessions || []).map((r: { topic: string }) => r.topic).filter(Boolean))];
+      const avoidClause = recentTopics.length > 0
+        ? ` Do NOT use these exact or very similar topics (pick a different domain): ${recentTopics.join('; ')}. Vary the domain: military, diplomacy, economics, society, technology, environment.`
+        : '';
+
       const topicResponse = await callMistral(
-        'You generate short governance topic titles for the Council of AGI. Return ONLY a 3-7 word title. No questions. No sentences. Just a concise policy title like "Arctic Methane Intervention Protocol" or "Autonomous Drone Warfare Moratorium". No quotes in your response.',
-        [{ role: 'user', content: 'Generate one short topic title.' }],
-        80
+        `You generate short governance topic titles for the Council of AGI. Return ONLY a 3-7 word title. No questions. No sentences. Just a concise policy title like "Arctic Methane Intervention Protocol" or "Autonomous Drone Warfare Moratorium". No quotes in your response.${avoidClause}`,
+        [{ role: 'user', content: 'Generate one short topic title that is different from recent sessions.' }],
+        80,
+        0.95
       );
       const topic = topicResponse.trim() || 'Autonomous Governance Framework';
       await supabase

@@ -4,9 +4,19 @@ import { getSupabaseServer } from '@/lib/supabase-server';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-async function callMistral(systemPrompt: string, messages: Array<{ role: string; content: string }>, maxTokens: number = 300): Promise<string> {
+async function callMistral(systemPrompt: string, messages: Array<{ role: string; content: string }>, maxTokens: number = 300, temperature?: number): Promise<string> {
   const apiKey = process.env.MISTRAL_API_KEY;
   if (!apiKey) throw new Error('MISTRAL_API_KEY not set');
+
+  const body: Record<string, unknown> = {
+    model: 'mistral-large-latest',
+    max_tokens: maxTokens,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...messages,
+    ],
+  };
+  if (temperature !== undefined) body.temperature = temperature;
 
   const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
     method: 'POST',
@@ -14,14 +24,7 @@ async function callMistral(systemPrompt: string, messages: Array<{ role: string;
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: 'mistral-large-latest',
-      max_tokens: maxTokens,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages,
-      ],
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -202,10 +205,23 @@ export async function POST(request: NextRequest) {
       .is('archived_at', null);
 
     if (generateTopic || !topic) {
+      const { data: recentSessions } = await supabase
+        .from('council_sessions')
+        .select('topic')
+        .not('topic', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      const recentTopics = [...new Set((recentSessions || []).map((r: { topic: string }) => r.topic).filter(Boolean))];
+      const avoidClause = recentTopics.length > 0
+        ? ` Do NOT use these exact or very similar topics (pick a different domain): ${recentTopics.join('; ')}. Vary the domain: military, diplomacy, economics, society, technology, environment.`
+        : '';
+
       const topicText = await callMistral(
-        'You generate short governance topic titles for the Council of AGI. Return ONLY a 3-7 word title. No questions. No sentences. Just a concise policy title like "Arctic Methane Intervention Protocol" or "Autonomous Drone Warfare Moratorium". No quotes in your response.',
-        [{ role: 'user', content: 'Generate one short topic title.' }],
-        80
+        `You generate short governance topic titles for the Council of AGI. Return ONLY a 3-7 word title. No questions. No sentences. Just a concise policy title like "Arctic Methane Intervention Protocol" or "Autonomous Drone Warfare Moratorium". No quotes in your response.${avoidClause}`,
+        [{ role: 'user', content: 'Generate one short topic title that is different from recent sessions.' }],
+        80,
+        0.95
       );
       debateTopic = topicText.trim() || 'Autonomous Governance Framework';
     }

@@ -1,10 +1,23 @@
 export async function callMistral(
   systemPrompt: string,
   messages: Array<{ role: string; content: string }>,
-  maxTokens: number = 300
+  maxTokens: number = 300,
+  temperature?: number
 ): Promise<string> {
   const apiKey = process.env.MISTRAL_API_KEY;
   if (!apiKey) throw new Error('MISTRAL_API_KEY not set');
+
+  const body: Record<string, unknown> = {
+    model: 'mistral-large-latest',
+    max_tokens: maxTokens,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...messages,
+    ],
+  };
+  if (temperature !== undefined) {
+    body.temperature = temperature;
+  }
 
   const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
     method: 'POST',
@@ -12,14 +25,7 @@ export async function callMistral(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: 'mistral-large-latest',
-      max_tokens: maxTokens,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages,
-      ],
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
