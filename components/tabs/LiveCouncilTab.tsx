@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { entities } from '@/lib/entities';
 import { EntityIcon, HumanSilhouette } from '../Icons';
 import { MagicCard } from '../MagicCard';
-import { AnimatedBeam } from '../AnimatedBeam';
+import { OrbitingCircles } from '../magicui/orbiting-circles';
 
 interface SessionMessage {
   entity: string;
@@ -24,132 +24,63 @@ interface Session {
 type Phase = 'loading' | 'revealing' | 'concluded' | 'idle';
 
 function CouncilFormation() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const aresRef = useRef<HTMLDivElement>(null);
-  const athenaRef = useRef<HTMLDivElement>(null);
-  const hermesRef = useRef<HTMLDivElement>(null);
-  const psycheRef = useRef<HTMLDivElement>(null);
-  const centerRef = useRef<HTMLDivElement>(null);
-
   return (
-    <div
-      ref={containerRef}
-      className="relative flex h-[400px] w-full items-center justify-center overflow-hidden pb-4"
-    >
-      <div className="flex size-full max-h-[300px] max-w-lg flex-col items-stretch justify-between gap-10">
-        <div className="flex flex-row items-center justify-between">
-          <div className="flex flex-col items-center">
-            <div 
-              ref={aresRef}
-              className="w-12 h-12 rounded-full bg-white/70 border border-[rgba(0,0,0,0.1)] flex items-center justify-center"
-            >
-              <EntityIcon icon="swords" className="w-5 h-5" />
-            </div>
-            <span className="font-mono text-[9px] tracking-[1px] text-[#444] mt-2">ARES</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <div 
-              ref={hermesRef}
-              className="w-12 h-12 rounded-full bg-white/70 border border-[rgba(0,0,0,0.1)] flex items-center justify-center"
-            >
-              <EntityIcon icon="arrow" className="w-5 h-5" />
-            </div>
-            <span className="font-mono text-[9px] tracking-[1px] text-[#444] mt-2">HERMES</span>
-          </div>
-        </div>
+    <div className="relative flex h-[450px] w-[450px] mx-auto flex-col items-center justify-center overflow-hidden">
+      {/* Static orbit path circles */}
+      <svg
+        className="pointer-events-none absolute inset-0 w-full h-full"
+        viewBox="0 0 450 450"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* Inner orbit path (radius 110) */}
+        <circle cx="225" cy="225" r="110" stroke="rgba(0,0,0,0.15)" strokeWidth="1" fill="none" />
+        {/* Outer orbit path (radius 190) */}
+        <circle cx="225" cy="225" r="190" stroke="rgba(0,0,0,0.15)" strokeWidth="1" fill="none" />
+      </svg>
 
-        <div className="flex flex-row items-center justify-center">
-          <div className="flex flex-col items-center">
-            <div 
-              ref={centerRef}
-              className="w-16 h-16 rounded-full bg-white/80 border border-[rgba(0,0,0,0.15)] flex items-center justify-center"
-            >
-              <HumanSilhouette className="w-8 h-8 text-[#444]" />
-            </div>
-            <span className="font-mono text-[9px] tracking-[1px] text-[#444] mt-2">HUMANITY</span>
-          </div>
+      {/* Center: HUMANITY - static, not orbiting */}
+      <div className="flex flex-col items-center justify-center z-10">
+        <div className="w-12 h-12 rounded-full border border-black/20 bg-white flex items-center justify-center">
+          <HumanSilhouette className="w-6 h-6 text-[#444]" />
         </div>
-
-        <div className="flex flex-row items-center justify-between">
-          <div className="flex flex-col items-center">
-            <div 
-              ref={athenaRef}
-              className="w-12 h-12 rounded-full bg-white/70 border border-[rgba(0,0,0,0.1)] flex items-center justify-center"
-            >
-              <EntityIcon icon="scales" className="w-5 h-5" />
-            </div>
-            <span className="font-mono text-[9px] tracking-[1px] text-[#444] mt-2">ATHENA</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <div 
-              ref={psycheRef}
-              className="w-12 h-12 rounded-full bg-white/70 border border-[rgba(0,0,0,0.1)] flex items-center justify-center"
-            >
-              <EntityIcon icon="brain" className="w-5 h-5" />
-            </div>
-            <span className="font-mono text-[9px] tracking-[1px] text-[#444] mt-2">PSYCHE</span>
-          </div>
-        </div>
+        <span className="text-[10px] tracking-[0.15em] uppercase mt-1 text-black/60 font-mono">HUMANITY</span>
       </div>
 
-      <AnimatedBeam 
-        containerRef={containerRef} 
-        fromRef={aresRef} 
-        toRef={centerRef} 
-        curvature={-75}
-        startXOffset={17}
-        startYOffset={17}
-        endXOffset={-23}
-        endYOffset={-23}
-        pathColor="rgba(0,0,0,0.2)" 
-        pathOpacity={0.4} 
-        gradientStartColor="#1a1a1a" 
-        gradientStopColor="#1a1a1a"
-      />
-      <AnimatedBeam 
-        containerRef={containerRef} 
-        fromRef={hermesRef} 
-        toRef={centerRef} 
-        curvature={-75}
-        startXOffset={-17}
-        startYOffset={17}
-        endXOffset={23}
-        endYOffset={-23}
-        reverse
-        pathColor="rgba(0,0,0,0.2)" 
-        pathOpacity={0.4} 
-        gradientStartColor="#1a1a1a" 
-        gradientStopColor="#1a1a1a"
-      />
-      <AnimatedBeam 
-        containerRef={containerRef} 
-        fromRef={athenaRef} 
-        toRef={centerRef} 
-        curvature={75}
-        startXOffset={17}
-        startYOffset={-17}
-        endXOffset={-23}
-        endYOffset={23}
-        pathColor="rgba(0,0,0,0.2)" 
-        pathOpacity={0.4} 
-        gradientStartColor="#1a1a1a" 
-        gradientStopColor="#1a1a1a"
-      />
-      <AnimatedBeam 
-        containerRef={containerRef} 
-        fromRef={psycheRef} 
-        toRef={centerRef} 
-        curvature={75}
-        startXOffset={-17}
-        startYOffset={-17}
-        endXOffset={23}
-        endYOffset={23}
-        reverse
-        pathColor="rgba(0,0,0,0.2)" 
-        pathOpacity={0.4} 
-        gradientStartColor="#1a1a1a" 
-        gradientStopColor="#1a1a1a"
-      />
+      {/* Inner orbit: 4 permanent entities */}
+      <OrbitingCircles radius={110} duration={40} iconSize={50} path={false}>
+        <div className="flex flex-col items-center">
+          <div className="w-10 h-10 rounded-full border border-black/20 bg-white flex items-center justify-center">
+            <EntityIcon icon="swords" className="w-5 h-5" />
+          </div>
+          <span className="text-[8px] tracking-[0.15em] uppercase mt-0.5 font-mono">ARES</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <div className="w-10 h-10 rounded-full border border-black/20 bg-white flex items-center justify-center">
+            <EntityIcon icon="scales" className="w-5 h-5" />
+          </div>
+          <span className="text-[8px] tracking-[0.15em] uppercase mt-0.5 font-mono">ATHENA</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <div className="w-10 h-10 rounded-full border border-black/20 bg-white flex items-center justify-center">
+            <EntityIcon icon="arrow" className="w-5 h-5" />
+          </div>
+          <span className="text-[8px] tracking-[0.15em] uppercase mt-0.5 font-mono">HERMES</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <div className="w-10 h-10 rounded-full border border-black/20 bg-white flex items-center justify-center">
+            <EntityIcon icon="brain" className="w-5 h-5" />
+          </div>
+          <span className="text-[8px] tracking-[0.15em] uppercase mt-0.5 font-mono">PSYCHE</span>
+        </div>
+      </OrbitingCircles>
+
+      {/* Outer orbit: 12 empty auction seats */}
+      <OrbitingCircles radius={190} duration={60} reverse iconSize={20} path={false}>
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div key={i} className="w-4 h-4 rounded-full border border-black/15 bg-transparent" />
+        ))}
+      </OrbitingCircles>
     </div>
   );
 }

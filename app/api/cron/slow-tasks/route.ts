@@ -91,70 +91,74 @@ export async function POST(request: Request) {
   }
 
   // ================================================================
-  // 3) EXPIRE PREDICTIONS PAST deadline -> RESOLVED
+  // 3) CHECK PREDICTIONS PAST target_date (no auto-resolution, just log)
   // ================================================================
   try {
-    const { data: expiredPreds } = await supabase
+    const { data: pastDue } = await supabase
       .from('predictions')
-      .select('id, title')
-      .eq('status', 'ACTIVE')
-      .lte('deadline', now.toISOString());
+      .select('id, prediction, target_date')
+      .eq('status', 'PENDING')
+      .lte('target_date', now.toISOString().split('T')[0]);
 
-    for (const pred of expiredPreds || []) {
-      await supabase
-        .from('predictions')
-        .update({ status: 'RESOLVED' })
-        .eq('id', pred.id);
-      actions.push(`Prediction "${pred.title}" -> RESOLVED`);
+    if (pastDue && pastDue.length > 0) {
+      actions.push(`${pastDue.length} predictions past target date, awaiting manual resolution`);
     }
   } catch (err) {
-    actions.push(`EXPIRE PREDICTIONS ERROR: ${err}`);
+    actions.push(`CHECK PREDICTIONS ERROR: ${err}`);
   }
 
   // ================================================================
-  // 4) GENERATE ONE PREDICTION VIA MISTRAL (if last >60min ago, max 1 call)
+  // 4) GENERATE ONE ENTITY FORECAST VIA MISTRAL (if last >60min ago, max 1 call)
   // ================================================================
   try {
     if (mistralCallsUsed >= MAX_MISTRAL) {
-      actions.push('Skipped prediction (Mistral budget used)');
+      actions.push('Skipped forecast (Mistral budget used)');
     } else {
       const { data: lastPrediction } = await supabase
         .from('predictions')
-        .select('created_at')
-        .order('created_at', { ascending: false })
+        .select('issued_at')
+        .order('issued_at', { ascending: false })
         .limit(1)
         .single();
 
       const sixtyMinAgo = new Date(now.getTime() - 60 * 60 * 1000);
       const shouldGenerate = !lastPrediction
-        || new Date(lastPrediction.created_at) < sixtyMinAgo;
+        || new Date(lastPrediction.issued_at) < sixtyMinAgo;
 
       if (shouldGenerate) {
-        const predictionRaw = await callMistral(
-          `You generate prediction markets for a council of AI superintelligences governing humanity. Return valid JSON only, no markdown, no backticks, no explanation. Format: {"title": "short question ending with ?", "description": "1-2 sentence context grounded in real 2025-2026 events", "options": [{"label": "option A", "votes": 0}, {"label": "option B", "votes": 0}]}. Topics: geopolitics, technology, economics, AI governance, military strategy, or diplomacy. Be specific with timeframes. Use real countries, real events, real numbers.`,
-          [{ role: 'user', content: 'Generate one new prediction market.' }],
-          300
+        const forecastPrompt = `You are generating a forecast for the Council of AGI. You are role-playing as one of four AI superintelligences. Pick one randomly: ARES (Military & Security), ATHENA (Geopolitics & Diplomacy), HERMES (Economics & Markets), or PSYCHE (Society & Human Behavior) and generate a specific, bold prediction about the world 3-12 months from now. Ground it in real current trends and tensions but extrapolate further than a human analyst would. Be specific with names, numbers, dates, and percentages — never be vague. Think like a superintelligence that sees patterns humans miss. Return ONLY valid JSON, no markdown, no backticks: {"entity": "ARES", "category": "Military & Security", "prediction": "concrete statement not a question", "target_date": "YYYY-MM-DD", "confidence": 72, "reasoning": "2-3 sentence explanation of why"}`;
+
+        const forecastRaw = await callMistral(
+          forecastPrompt,
+          [{ role: 'user', content: 'Generate one new entity forecast.' }],
+          400
         );
         mistralCallsUsed += 1;
 
-        const cleaned = predictionRaw.replace(/```json|```/g, '').trim();
-        const prediction = JSON.parse(cleaned);
-        const deadline = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const cleaned = forecastRaw.replace(/```json|```/g, '').trim();
+        const forecast = JSON.parse(cleaned);
+
+        // Validate required fields
+        if (!forecast.entity || !forecast.category || !forecast.prediction || !forecast.target_date || forecast.confidence === undefined || !forecast.reasoning) {
+          throw new Error('Missing required forecast fields');
+        }
 
         await supabase.from('predictions').insert({
-          title: prediction.title,
-          description: prediction.description,
-          options: prediction.options,
-          deadline: deadline.toISOString(),
-          status: 'ACTIVE',
+          entity: forecast.entity,
+          category: forecast.category,
+          prediction: forecast.prediction,
+          target_date: forecast.target_date,
+          confidence: Math.max(0, Math.min(100, forecast.confidence)),
+          reasoning: forecast.reasoning,
+          status: 'PENDING',
         });
-        actions.push(`Generated new prediction: ${prediction.title}`);
+        actions.push(`Generated ${forecast.entity} forecast: ${forecast.prediction.slice(0, 60)}...`);
       } else {
-        actions.push('Prediction throttled (last one <60min ago)');
+        actions.push('Forecast throttled (last one <60min ago)');
       }
     }
   } catch (err) {
-    actions.push(`PREDICTION ERROR: ${err}`);
+    actions.push(`FORECAST ERROR: ${err}`);
   }
 
   // ================================================================

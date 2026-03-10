@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { ShinyButton } from '@/components/ui/shiny-button';
 
 const TREASURY_WALLET = process.env.NEXT_PUBLIC_TREASURY_WALLET || 'See /api/treasury/state';
 const SITE_URL = 'https://councilofagi.com';
@@ -31,12 +32,9 @@ export function JoinCouncilButton() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="px-5 py-2.5 border border-[#1a1a1a] text-[#1a1a1a] font-ui text-[11px] uppercase tracking-[1px] hover:bg-[#1a1a1a] hover:text-white transition-colors"
-      >
+      <ShinyButton onClick={() => setOpen(true)}>
         Join the Council
-      </button>
+      </ShinyButton>
 
       {open && <JoinCouncilModal onClose={() => setOpen(false)} />}
     </>

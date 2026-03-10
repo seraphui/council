@@ -1,16 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ARCHIVE_LOGS, ArchiveLog } from '@/data/archive-logs';
 import { MagicCard } from '../MagicCard';
 import { ArrowLeft, Download } from 'lucide-react';
 import { EntityIcon } from '../Icons';
 import { entities } from '@/lib/entities';
-import { getSupabase } from '@/lib/supabase';
-
 export const dynamic = 'force-dynamic';
-
-const INITIAL_LOGS = ARCHIVE_LOGS.filter(log => log.phase === 'initial');
 
 interface DynamicLog {
   id: string;
@@ -58,39 +54,9 @@ function downloadTranscript(log: AnyLog) {
 
 export default function ArchiveLogsTab() {
   const [selectedLog, setSelectedLog] = useState<ArchiveLog | DynamicLog | null>(null);
-  const [dynamicLogs, setDynamicLogs] = useState<DynamicLog[]>([]);
 
-  useEffect(() => {
-    async function fetchArchivedSessions() {
-      try {
-        const supabase = getSupabase();
-        const { data } = await supabase
-          .from('council_sessions')
-          .select('*')
-          .not('archived_at', 'is', null)
-          .order('archived_at', { ascending: false });
-        
-        if (data) {
-          setDynamicLogs(data.map((session: { id: string; log_id?: string; topic: string; messages: Array<{ entity: string; content: string }>; created_at: string; status: string }) => ({
-            id: session.log_id || `SESSION-${session.id.slice(0, 4).toUpperCase()}`,
-            topic: session.topic,
-            summary: 'Live council session archived',
-            date: new Date(session.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
-            status: session.status === 'COMPLETE' ? 'RESOLVED' : session.status,
-            transcript: (session.messages || []).map((m: { entity: string; content: string }) => ({
-              speaker: m.entity,
-              message: m.content,
-            })),
-          })));
-        }
-      } catch (error) {
-        console.error('Failed to fetch archived sessions:', error);
-      }
-    }
-    fetchArchivedSessions();
-  }, []);
-
-  const allLogs = [...dynamicLogs, ...INITIAL_LOGS];
+  // Only show static archive logs 1–12 (LOG-0001 through LOG-0012)
+  const allLogs = ARCHIVE_LOGS;
 
   if (selectedLog) {
     return (

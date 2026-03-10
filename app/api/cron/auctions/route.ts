@@ -66,9 +66,17 @@ export async function POST(request: Request) {
 
       actions.push(`Settled Seat #${auction.seat_number} to ${auction.highest_bidder_name} for ${auction.highest_bid_sol} SOL`);
     } else {
-      await supabase.from('seat_auctions').update({ status: 'CLOSED' }).eq('id', auction.id);
-      await supabase.from('council_seats').update({ status: 'EMPTY', updated_at: now.toISOString() }).eq('seat_number', auction.seat_number);
-      actions.push(`Seat #${auction.seat_number} auction closed with no bids`);
+      // No bids: reset the auction timer for the same seat (extend window)
+      const newClosesAt = new Date(now.getTime() + windowHours * 60 * 60 * 1000);
+      await supabase
+        .from('seat_auctions')
+        .update({
+          opens_at: now.toISOString(),
+          closes_at: newClosesAt.toISOString(),
+        })
+        .eq('id', auction.id);
+      // Seat stays AUCTIONING
+      actions.push(`Seat #${auction.seat_number} auction had no bids — timer reset for same seat`);
     }
   }
 

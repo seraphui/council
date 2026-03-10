@@ -1,9 +1,11 @@
 """FastAPI backend for Council of AGI."""
 
+import os
 from dotenv import load_dotenv
 
 # Load .env before any other imports that use env vars
 load_dotenv()
+print(f"[DEBUG] .env loaded, ANTHROPIC_API_KEY present: {bool(os.getenv('ANTHROPIC_API_KEY'))}")
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,7 +21,7 @@ app = FastAPI(title="Council of AGI API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001", "http://localhost:3004", "http://localhost:5173"],
+    allow_origins=["https://councilofagi.com", "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001", "http://localhost:3004", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -87,7 +89,7 @@ async def council_session():
     }
 
 
-@app.post("/api/chat/direct")
+@app.post("/api/chat/")
 async def chat_direct(request: DirectChatRequest):
     """
     Direct chat with a single entity.
