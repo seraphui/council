@@ -42,9 +42,14 @@ export function TokenGate({ children, feature }: TokenGateProps) {
           }
         </p>
         {!connected ? (
-          <button 
+          <button
+            type="button"
             className="px-6 py-3 border border-[#2a2a2a] text-[#2a2a2a] font-ui text-[11px] uppercase tracking-[1px] hover:bg-[#2a2a2a] hover:text-white transition-colors"
-            onClick={connectWallet} 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              connectWallet();
+            }}
             disabled={connecting}
           >
             {connecting ? "Connecting..." : "Connect Phantom Wallet"}

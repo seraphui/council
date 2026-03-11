@@ -27,7 +27,9 @@ export function useWallet() {
 
 function getPhantom() {
   if (typeof window === "undefined") return null;
-  const provider = (window as any)?.solana;
+  const w = window as any;
+  // Phantom injects at window.phantom.solana (current) or window.solana (legacy)
+  const provider = w?.phantom?.solana?.isPhantom ? w.phantom.solana : w?.solana;
   return provider?.isPhantom ? provider : null;
 }
 
@@ -81,7 +83,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const phantom = getPhantom();
 
     if (!phantom) {
-      window.open("https://phantom.app/", "_blank");
+      // Open Phantom install page in new tab; do not navigate current window
+      window.open("https://phantom.app/", "_blank", "noopener,noreferrer");
       return;
     }
 
@@ -89,7 +92,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     try {
       const resp = await phantom.connect();
-      const pubkey = resp.publicKey.toString();
+      const pubkey = resp.publicKey?.toString?.() ?? resp.publicKey;
+
+      if (!pubkey) {
+        throw new Error("No public key returned");
+      }
 
       setState(prev => ({
         ...prev,
@@ -128,18 +135,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const phantom = getPhantom();
     if (phantom?.isConnected && phantom?.publicKey) {
-      const pubkey = phantom.publicKey.toString();
-      setState(prev => ({
-        ...prev,
-        connected: true,
-        publicKey: pubkey,
-      }));
-      verifyWallet(pubkey);
+      const pubkey = phantom.publicKey?.toString?.() ?? phantom.publicKey;
+      if (pubkey) {
+        setState(prev => ({
+          ...prev,
+          connected: true,
+          publicKey: String(pubkey),
+        }));
+        verifyWallet(String(pubkey));
+      }
     }
 
     const handleChange = (newPubkey: any) => {
       if (newPubkey) {
-        const addr = newPubkey.toString();
+        const addr = newPubkey?.toString?.() ?? String(newPubkey);
         setState(prev => ({ ...prev, publicKey: addr }));
         verifyWallet(addr);
       } else {

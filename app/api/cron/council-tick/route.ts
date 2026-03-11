@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { callMistral, DEBATE_PROMPTS, ROUND_CONTEXT, ENTITY_IDS } from '@/lib/mistral';
+import { callMistral, DEBATE_PROMPTS, ROUND_CONTEXT } from '@/lib/mistral';
 import { ARCHIVE_LOGS } from '@/data/archive-logs';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 10;
 
 const PREWRITTEN_LOG_IDS = ['LOG-0004', 'LOG-0005', 'LOG-0006', 'LOG-0007', 'LOG-0008', 'LOG-0009', 'LOG-0010', 'LOG-0011', 'LOG-0012'];
+
+/** Pre-written logs use 8 messages: round 1 (ARES, ATHENA, HERMES, PSYCHE) then round 2 (same order). */
+const DEBATE_MESSAGE_COUNT = 8;
+
+/** Entity order for 8-message debate: indices 0-3 round 1, 4-7 round 2. */
+const ENTITY_ORDER = ['ARES', 'ATHENA', 'HERMES', 'PSYCHE', 'ARES', 'ATHENA', 'HERMES', 'PSYCHE'];
 
 type SessionRow = {
   id: string;
@@ -63,8 +69,15 @@ export async function POST(request: Request) {
       }
     }
 
-    // No session or last COMPLETE → start new: play pre-written log or create GENERATING
+    // No session or last COMPLETE → start new: archive previous session, then play pre-written log or create GENERATING
     if (!session || session.status === 'COMPLETE') {
+      // Explicitly archive the previous session so it appears in Archive Logs (archived_at non-null)
+      if (session?.id) {
+        await supabase
+          .from('council_sessions')
+          .update({ archived_at: now.toISOString() })
+          .eq('id', session.id);
+      }
       await supabase
         .from('council_sessions')
         .update({ archived_at: now.toISOString() })
@@ -85,7 +98,7 @@ export async function POST(request: Request) {
             entity: t.speaker,
             entityId: t.speaker,
             content: t.message,
-            round: i < 4 ? 1 : i < 6 ? 2 : 3,
+            round: i < 4 ? 1 : 2,
           }));
           await supabase.from('council_sessions').insert({
             topic: logData.topic,
@@ -138,8 +151,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, actions, timestamp: now.toISOString() });
     }
 
-    // GENERATING with 4 messages but not yet COMPLETE (e.g. race) → mark COMPLETE
-    if (session.status === 'GENERATING' && messages.length >= 4) {
+    // GENERATING with 8 messages but not yet COMPLETE (e.g. race) → mark COMPLETE
+    if (session.status === 'GENERATING' && messages.length >= DEBATE_MESSAGE_COUNT) {
       const { count } = await supabase
         .from('council_sessions')
         .select('*', { count: 'exact', head: true })
@@ -150,20 +163,27 @@ export async function POST(request: Request) {
         .from('council_sessions')
         .update({ status: 'COMPLETE', log_id: logId })
         .eq('id', session.id);
-      actions.push(`Marked COMPLETE (had 4 messages), log_id: ${logId}`);
+      actions.push(`Marked COMPLETE (had ${DEBATE_MESSAGE_COUNT} messages), log_id: ${logId}`);
       return NextResponse.json({ success: true, actions, timestamp: now.toISOString() });
     }
 
-    // GENERATING: topic set, <4 messages → 1 Mistral call for next entity
-    if (session.status === 'GENERATING' && session.topic && session.topic !== 'Generating...' && messages.length < 4) {
-      const entityId = ENTITY_IDS[messages.length];
+    // GENERATING: topic set, <8 messages → 1 Mistral call for next entity (one per tick)
+    if (session.status === 'GENERATING' && session.topic && session.topic !== 'Generating...' && messages.length < DEBATE_MESSAGE_COUNT) {
+      const index = messages.length;
+      const entityId = ENTITY_ORDER[index];
+      const round = index < 4 ? 1 : 2;
       const prev = messages.map(m => `${m.entity}: ${m.content}`).join('\n\n');
+
+      const isRound2 = round === 2;
+      const roundPrompt = isRound2
+        ? ROUND_CONTEXT.challenge
+        : ROUND_CONTEXT.opening;
       const userContent = prev
-        ? `Topic: ${session.topic}\n\nPrevious:\n${prev}\n\nYour opening position.`
+        ? `Topic: ${session.topic}\n\nPrevious:\n${prev}\n\n${isRound2 ? 'Challenge one specific entity BY NAME. Disagree with a specific point. Be sharp.' : 'Your opening position.'}`
         : `Topic: ${session.topic}\n\nYour opening position.`;
 
       const responseText = await callMistral(
-        DEBATE_PROMPTS[entityId] + ROUND_CONTEXT.opening,
+        DEBATE_PROMPTS[entityId] + roundPrompt,
         [{ role: 'user', content: userContent.trim() }],
         300
       );
@@ -172,11 +192,11 @@ export async function POST(request: Request) {
         entity: entityId,
         entityId,
         content: responseText.trim(),
-        round: 1,
+        round,
       };
       const newMessages = [...messages, newMessage];
 
-      if (newMessages.length === 4) {
+      if (newMessages.length >= DEBATE_MESSAGE_COUNT) {
         const { count } = await supabase
           .from('council_sessions')
           .select('*', { count: 'exact', head: true })
@@ -187,13 +207,13 @@ export async function POST(request: Request) {
           .from('council_sessions')
           .update({ messages: newMessages, status: 'COMPLETE', log_id: logId })
           .eq('id', session.id);
-        actions.push(`Completed debate (4 messages), log_id: ${logId}`);
+        actions.push(`Completed debate (${DEBATE_MESSAGE_COUNT} messages), log_id: ${logId}`);
       } else {
         await supabase
           .from('council_sessions')
           .update({ messages: newMessages })
           .eq('id', session.id);
-        actions.push(`Appended ${entityId} response (${newMessages.length}/4)`);
+        actions.push(`Appended ${entityId} response (${newMessages.length}/${DEBATE_MESSAGE_COUNT})`);
       }
       return NextResponse.json({ success: true, actions, timestamp: now.toISOString() });
     }
