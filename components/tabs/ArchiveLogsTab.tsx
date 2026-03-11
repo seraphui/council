@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ARCHIVE_LOGS, ArchiveLog } from '@/data/archive-logs';
 import { MagicCard } from '../MagicCard';
 import { ArrowLeft, Download } from 'lucide-react';
 import { EntityIcon } from '../Icons';
 import { entities } from '@/lib/entities';
+
 export const dynamic = 'force-dynamic';
 
 interface DynamicLog {
@@ -15,6 +16,17 @@ interface DynamicLog {
   summary: string;
   status: string;
   transcript: { speaker: string; message: string }[];
+  isFromDb?: boolean;
+}
+
+interface DbSession {
+  id: string;
+  topic: string;
+  messages: Array<{ entity: string; content: string }> | string | null;
+  status: string;
+  log_id: string | null;
+  created_at: string;
+  archived_at: string;
 }
 
 const getEntityIcon = (entityId: string) => {
@@ -23,6 +35,37 @@ const getEntityIcon = (entityId: string) => {
 };
 
 type AnyLog = ArchiveLog | DynamicLog;
+
+function formatDateFromIso(isoDate: string): string {
+  const date = new Date(isoDate);
+  return date.toISOString().split('T')[0].replace(/-/g, '.');
+}
+
+function parseDateToSortable(dateStr: string): number {
+  const normalized = dateStr.replace(/\./g, '-');
+  return new Date(normalized).getTime();
+}
+
+function convertDbSessionToLog(session: DbSession): DynamicLog {
+  let messages = session.messages;
+  if (typeof messages === 'string') {
+    try { messages = JSON.parse(messages); } catch { messages = []; }
+  }
+  if (!Array.isArray(messages)) messages = [];
+
+  return {
+    id: session.log_id || `SESSION-${session.id.slice(0, 6).toUpperCase()}`,
+    date: formatDateFromIso(session.created_at),
+    topic: session.topic || 'Council Session',
+    summary: 'Archived council deliberation',
+    status: 'RESOLVED',
+    transcript: messages.map((m: { entity: string; content: string }) => ({
+      speaker: m.entity,
+      message: m.content,
+    })),
+    isFromDb: true,
+  };
+}
 
 function generateDownloadContent(log: AnyLog): string {
   let content = `COUNCIL OF AGI — ARCHIVE LOG\n`;
@@ -53,10 +96,50 @@ function downloadTranscript(log: AnyLog) {
 }
 
 export default function ArchiveLogsTab() {
-  const [selectedLog, setSelectedLog] = useState<ArchiveLog | DynamicLog | null>(null);
+  const [selectedLog, setSelectedLog] = useState<AnyLog | null>(null);
+  const [dbLogs, setDbLogs] = useState<DynamicLog[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Only show static archive logs 1–12 (LOG-0001 through LOG-0012)
-  const allLogs = ARCHIVE_LOGS;
+  const fetchArchives = useCallback(async () => {
+    try {
+      const res = await fetch('/api/council/archives');
+      if (!res.ok) throw new Error('Failed to fetch archives');
+      const data = await res.json();
+      
+      if (data.sessions && Array.isArray(data.sessions)) {
+        const converted = data.sessions.map(convertDbSessionToLog);
+        setDbLogs(converted);
+      }
+    } catch (err) {
+      console.error('Failed to fetch archived sessions:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchArchives();
+  }, [fetchArchives]);
+
+  const allLogs: AnyLog[] = (() => {
+    const staticLogIds = new Set(ARCHIVE_LOGS.map(l => l.id));
+    const dbLogIds = new Set(dbLogs.map(l => l.id));
+
+    const dbLogsWithLogId = dbLogs.filter(l => staticLogIds.has(l.id));
+    const dbLogsWithoutLogId = dbLogs.filter(l => !staticLogIds.has(l.id));
+
+    const staticLogsNotInDb = ARCHIVE_LOGS.filter(l => !dbLogIds.has(l.id));
+
+    const merged: AnyLog[] = [
+      ...dbLogsWithLogId,
+      ...dbLogsWithoutLogId,
+      ...staticLogsNotInDb,
+    ];
+
+    merged.sort((a, b) => parseDateToSortable(b.date) - parseDateToSortable(a.date));
+
+    return merged;
+  })();
 
   if (selectedLog) {
     return (
@@ -116,6 +199,12 @@ export default function ArchiveLogsTab() {
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="py-4 text-center">
+          <p className="font-mono text-[12px] text-[#888] italic">Loading archives...</p>
+        </div>
+      )}
+
       <div className="border border-[rgba(0,0,0,0.1)]">
         <div className="grid grid-cols-[80px_90px_1fr_90px_50px] gap-4 px-5 py-3 border-b border-[rgba(0,0,0,0.1)] bg-[rgba(0,0,0,0.02)]">
           <span className="font-ui text-[10px] uppercase tracking-[1px] text-[#444]">ID</span>
@@ -124,6 +213,12 @@ export default function ArchiveLogsTab() {
           <span className="font-ui text-[10px] uppercase tracking-[1px] text-[#444]">Status</span>
           <span className="font-ui text-[10px] uppercase tracking-[1px] text-[#444]"></span>
         </div>
+
+        {allLogs.length === 0 && !loading && (
+          <div className="px-5 py-8 text-center">
+            <p className="font-roos text-[14px] text-[#888]">No archived sessions yet.</p>
+          </div>
+        )}
 
         {allLogs.map((log) => (
           <MagicCard 

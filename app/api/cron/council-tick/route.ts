@@ -52,10 +52,11 @@ export async function POST(request: Request) {
     const session = lastSession as SessionRow | null;
     const messages = Array.isArray(session?.messages) ? session.messages : [];
 
-    // Stuck GENERATING >5 min → force COMPLETE
+    // Stuck GENERATING >15 min → force COMPLETE
+    // A full debate needs ~10 ticks (1 create + 1 topic + 8 messages), so 5 min was too aggressive
     if (session?.status === 'GENERATING') {
       const ageMs = now.getTime() - new Date(session.created_at).getTime();
-      if (ageMs > 5 * 60 * 1000) {
+      if (ageMs > 15 * 60 * 1000) {
         await supabase
           .from('council_sessions')
           .update({
@@ -73,15 +74,26 @@ export async function POST(request: Request) {
     if (!session || session.status === 'COMPLETE') {
       // Explicitly archive the previous session so it appears in Archive Logs (archived_at non-null)
       if (session?.id) {
-        await supabase
+        const { error: archiveError } = await supabase
           .from('council_sessions')
           .update({ archived_at: now.toISOString() })
-          .eq('id', session.id);
+          .eq('id', session.id)
+          .is('archived_at', null);
+        if (archiveError) {
+          actions.push(`Archive error for ${session.id}: ${archiveError.message}`);
+        } else {
+          actions.push(`Archived previous session ${session.id.slice(0, 8)}`);
+        }
       }
-      await supabase
+      // Also archive any other stale unarchived sessions
+      const { error: bulkArchiveError } = await supabase
         .from('council_sessions')
         .update({ archived_at: now.toISOString() })
-        .is('archived_at', null);
+        .is('archived_at', null)
+        .neq('id', session?.id || '00000000-0000-0000-0000-000000000000');
+      if (bulkArchiveError) {
+        actions.push(`Bulk archive error: ${bulkArchiveError.message}`);
+      }
 
       const { data: usedLogs } = await supabase
         .from('council_sessions')
