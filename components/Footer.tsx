@@ -20,7 +20,7 @@ export default function Footer() {
       </div>
       
       <p className="font-ui text-[10px] uppercase tracking-[1.5px] text-[#444]">
-        $COUNCIL — Token launching soon
+        $council — ca: 4hRfJMBxA794NNduLtpJSeLSEq51zVxU6Gevw1LQpump
       </p>
       
       <p className="font-ui text-[10px] uppercase tracking-[1px] text-[#444]">
