@@ -140,14 +140,46 @@ function DiscussionPanel() {
     fetchSession();
   }, [fetchSession]);
 
-  // Revealing: show next message every 7 seconds
+  // Revealing: show next message every 7 seconds; poll for more while GENERATING
   useEffect(() => {
     if (phase !== 'revealing' || !session) return;
 
     if (visibleMessages >= session.messages.length) {
-      setThinkingEntity(null);
-      setPhase('concluded');
-      return;
+      if (session.status === 'COMPLETE') {
+        setThinkingEntity(null);
+        setPhase('concluded');
+        return;
+      }
+
+      // Still GENERATING — show thinking indicator and poll for new messages
+      const ENTITY_ORDER_LABELS = ['ARES', 'ATHENA', 'HERMES', 'PSYCHE', 'ARES', 'ATHENA', 'HERMES', 'PSYCHE'];
+      setThinkingEntity(ENTITY_ORDER_LABELS[session.messages.length] || null);
+
+      const poll = async () => {
+        try {
+          const res = await fetch('/api/council/session');
+          if (!res.ok) return;
+          const data = await res.json();
+
+          if (!data.id || data.id !== session.id) {
+            setPhase('concluded');
+            return;
+          }
+
+          let msgs = data.messages;
+          if (typeof msgs === 'string') {
+            try { msgs = JSON.parse(msgs); } catch { msgs = []; }
+          }
+          if (!Array.isArray(msgs)) msgs = [];
+
+          if (msgs.length > session.messages.length || data.status !== session.status) {
+            setSession(prev => prev ? { ...prev, messages: msgs, status: data.status } : null);
+          }
+        } catch { /* ignore polling errors */ }
+      };
+
+      const interval = setInterval(poll, 8000);
+      return () => clearInterval(interval);
     }
 
     const nextEntity = session.messages[visibleMessages]?.entity;
